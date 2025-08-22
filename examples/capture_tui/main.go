@@ -1,9 +1,9 @@
-//! 捕获并渲染 TUI 程序输出的示例（使用新的 terminal 模块）
+//! Example of capturing and rendering TUI program output (using the new terminal module)
 //!
-//! 这个示例展示如何使用新的 TerminalBuffer 实现：
-//! 1. 在伪终端 (PTY) 中启动 TUI 程序（如 htop）
-//! 2. 捕获程序的输出流
-//! 3. 使用 GoVTE 的 terminal 模块解析并渲染输出
+//! This example demonstrates how to use the new TerminalBuffer implementation:
+//! 1. Start TUI programs (like htop) in a pseudo terminal (PTY)
+//! 2. Capture the program's output stream
+//! 3. Parse and render output using GoVTE's terminal module
 
 package main
 
@@ -23,57 +23,57 @@ import (
 	"golang.org/x/term"
 )
 
-// getTerminalSize 获取当前终端大小，如果失败则返回默认值
+// getTerminalSize gets the current terminal size, returns default values if failed
 func getTerminalSize() (int, int) {
 	width, height, err := term.GetSize(int(os.Stdin.Fd()))
 	if err != nil {
-		return 120, 40 // 默认尺寸
+		return 120, 40 // default size
 	}
 	return width, height
 }
 
-// captureTUIOutput 捕获 TUI 程序的输出
+// captureTUIOutput captures TUI program output
 func captureTUIOutput(program string, args []string, duration time.Duration) ([]byte, int, int, error) {
-	fmt.Printf("正在启动 %s ...\n", program)
+	fmt.Printf("Starting %s ...\n", program)
 
-	// 获取当前终端大小
+	// Get current terminal size
 	width, height := getTerminalSize()
-	fmt.Printf("检测到终端大小: %dx%d\n", width, height)
+	fmt.Printf("Detected terminal size: %dx%d\n", width, height)
 
-	// 创建命令
+	// Create command
 	cmd := exec.Command(program, args...)
 
-	// 设置环境变量
+	// Set environment variables
 	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
 
-	// 创建 PTY
+	// Create PTY
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
-		return nil, 0, 0, fmt.Errorf("无法创建 PTY: %w", err)
+		return nil, 0, 0, fmt.Errorf("unable to create PTY: %w", err)
 	}
 	defer ptmx.Close()
 
-	// 设置 PTY 大小
+	// Set PTY size
 	err = pty.Setsize(ptmx, &pty.Winsize{
 		Rows: uint16(height),
 		Cols: uint16(width),
 	})
 	if err != nil {
-		log.Printf("警告: 无法设置 PTY 大小: %v", err)
+		log.Printf("Warning: unable to set PTY size: %v", err)
 	}
 
-	fmt.Printf("程序已启动，PID: %d\n", cmd.Process.Pid)
-	fmt.Printf("开始捕获输出（%.0f 秒）...\n", duration.Seconds())
+	fmt.Printf("Program started, PID: %d\n", cmd.Process.Pid)
+	fmt.Printf("Starting output capture (%.0f seconds)...\n", duration.Seconds())
 
-	// 收集输出
+	// Collect output
 	var output []byte
 	buffer := make([]byte, 4096)
 
-	// 创建带超时的上下文
+	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), duration)
 	defer cancel()
 
-	// 使用 goroutine 读取数据
+	// Use goroutine to read data
 	done := make(chan bool)
 	go func() {
 		defer close(done)
@@ -82,65 +82,65 @@ func captureTUIOutput(program string, args []string, duration time.Duration) ([]
 			case <-ctx.Done():
 				return
 			default:
-				// 设置读取超时
+				// Set read timeout
 				ptmx.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 				n, err := ptmx.Read(buffer)
 				if err != nil {
 					if err != io.EOF && !os.IsTimeout(err) {
-						log.Printf("读取错误: %v", err)
+						log.Printf("Read error: %v", err)
 					}
 					continue
 				}
 				if n > 0 {
 					output = append(output, buffer[:n]...)
-					// 显示捕获进度
-					fmt.Printf("\r已捕获 %d 字节", len(output))
+					// Show capture progress
+					fmt.Printf("\rCaptured %d bytes", len(output))
 				}
 			}
 		}
 	}()
 
-	// 等待超时或完成
+	// Wait for timeout or completion
 	<-ctx.Done()
 
-	// 给读取 goroutine 一点时间完成
+	// Give read goroutine some time to complete
 	select {
 	case <-done:
 	case <-time.After(100 * time.Millisecond):
 	}
 
-	fmt.Println("\n捕获完成，正在关闭程序...")
+	fmt.Println("\nCapture complete, shutting down program...")
 
-	// 尝试优雅地终止程序
+	// Try to gracefully terminate the program
 	if cmd.Process != nil {
 		cmd.Process.Kill()
 		cmd.Wait()
 	}
 
-	// 给程序一点时间清理
+	// Give the program some time to clean up
 	time.Sleep(100 * time.Millisecond)
 
 	return output, width, height, nil
 }
 
-// renderOutput 使用新的 TerminalBuffer 渲染输出
+// renderOutput renders output using the new TerminalBuffer
 func renderOutput(data []byte, width, height int, withColors bool) string {
 	parser := govte.NewParser()
 	terminalBuffer := terminal.NewTerminalBuffer(width, height)
 
-	// 解析所有数据
+	// Parse all data
 	for _, b := range data {
 		parser.Advance(terminalBuffer, []byte{b})
 	}
 
-	fmt.Println("\n=== 渲染统计 ===")
-	fmt.Printf("捕获字节数: %d\n", len(data))
-	fmt.Printf("终端大小: %dx%d\n", width, height)
+	fmt.Println("\n=== Render Statistics ===")
+	fmt.Printf("Captured bytes: %d\n", len(data))
+	fmt.Printf("Terminal size: %dx%d\n", width, height)
 
 	cursorX, cursorY := terminalBuffer.CursorPosition()
-	fmt.Printf("光标位置: (%d, %d)\n", cursorX+1, cursorY+1)
+	fmt.Printf("Cursor position: (%d, %d)\n", cursorX+1, cursorY+1)
 
-	fmt.Printf("彩色输出: %s\n", map[bool]string{true: "启用", false: "禁用"}[withColors])
+	fmt.Printf("Color output: %s\n", map[bool]string{true: "Enabled", false: "Disabled"}[withColors])
 
 	if withColors {
 		return terminalBuffer.GetDisplayWithColors()
@@ -149,9 +149,9 @@ func renderOutput(data []byte, width, height int, withColors bool) string {
 }
 
 func main() {
-	fmt.Println("=== GoVTE TUI 程序捕获示例 ===")
+	fmt.Println("=== GoVTE TUI Program Capture Example ===")
 
-	// 检查是否启用颜色输出
+	// Check if color output is enabled
 	enableColors := false
 	for _, arg := range os.Args[1:] {
 		if arg == "--colors" || arg == "-c" {
@@ -161,13 +161,13 @@ func main() {
 	}
 
 	if enableColors {
-		fmt.Println("🎨 已启用彩色输出模式")
+		fmt.Println("🎨 Color output mode enabled")
 	} else {
-		fmt.Println("💡 提示: 使用 --colors 或 -c 参数启用彩色输出")
+		fmt.Println("💡 Tip: Use --colors or -c flag to enable color output")
 	}
 	fmt.Println()
 
-	// 尝试不同的 TUI 程序
+	// Try different TUI programs
 	programs := []struct {
 		name string
 		args []string
@@ -182,13 +182,13 @@ func main() {
 	var usedProgram string
 	var terminalWidth, terminalHeight int
 
-	// 尝试找到可用的程序
+	// Try to find an available program
 	for _, prog := range programs {
 		data, width, height, err := captureTUIOutput(prog.name, prog.args, 3*time.Second)
 		if err != nil {
-			fmt.Printf("无法运行 %s: %v\n", prog.name, err)
+			fmt.Printf("Unable to run %s: %v\n", prog.name, err)
 			if prog.name == "htop" {
-				fmt.Println("提示: 请安装 htop (例如: apt install htop 或 brew install htop)")
+				fmt.Println("Tip: Please install htop (e.g., apt install htop or brew install htop)")
 			}
 			continue
 		}
@@ -200,35 +200,35 @@ func main() {
 		break
 	}
 
-	// 渲染捕获的输出
+	// Render captured output
 	if capturedData != nil {
-		fmt.Printf("\n成功捕获 %s 的输出\n", usedProgram)
-		fmt.Println("\n=== 最终渲染帧 ===")
+		fmt.Printf("\nSuccessfully captured %s output\n", usedProgram)
+		fmt.Println("\n=== Final Rendered Frame ===")
 
 		rendered := renderOutput(capturedData, terminalWidth, terminalHeight, enableColors)
 
-		// 直接输出渲染结果（避免 Unicode 字符截断问题）
+		// Output rendered result directly (avoid Unicode character truncation issues)
 		lines := strings.Split(rendered, "\n")
 		for _, line := range lines {
 			fmt.Println(line)
 		}
 
-		// 可选：将原始数据保存到文件
+		// Optional: save raw data to file
 		for _, arg := range os.Args[1:] {
 			if arg == "--save" {
 				filename := fmt.Sprintf("%s_capture.dat", usedProgram)
 				err := os.WriteFile(filename, capturedData, 0644)
 				if err != nil {
-					log.Printf("保存文件失败: %v", err)
+					log.Printf("Failed to save file: %v", err)
 				} else {
-					fmt.Printf("\n原始数据已保存到: %s\n", filename)
+					fmt.Printf("\nRaw data saved to: %s\n", filename)
 				}
 				break
 			}
 		}
 	} else {
-		fmt.Println("\n错误: 无法捕获任何 TUI 程序的输出")
-		fmt.Println("请确保至少安装了 htop、top 或 ps 中的一个")
+		fmt.Println("\nError: Unable to capture any TUI program output")
+		fmt.Println("Please ensure at least one of htop, top, or ps is installed")
 		os.Exit(1)
 	}
 }

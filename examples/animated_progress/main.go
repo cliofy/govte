@@ -1,10 +1,10 @@
-//! GoVTE 实时动画进度条示例
-//! 
-//! 展示如何使用GoVTE创建真正的动画效果，包括：
-//! - 使用 \r 回车符实现行内更新
-//! - 时间控制实现平滑动画
-//! - 多种进度条样式
-//! - ANSI颜色序列处理
+//! GoVTE Animated Progress Bar Example
+//!
+//! Demonstrates how to create real animation effects using GoVTE, including:
+//! - Using \r carriage return for in-line updates
+//! - Time control for smooth animations
+//! - Multiple progress bar styles
+//! - ANSI color sequence handling
 
 package main
 
@@ -16,208 +16,208 @@ import (
 	"github.com/cliofy/govte"
 )
 
-// simpleProgressBar 简单进度条 - 直接使用GoVTE处理ANSI序列
+// simpleProgressBar simple progress bar - directly uses GoVTE to handle ANSI sequences
 func simpleProgressBar(durationSecs int) {
-	fmt.Printf("简单进度条（%d秒）:\n", durationSecs)
-	
+	fmt.Printf("Simple progress bar (%d seconds):\n", durationSecs)
+
 	processor := govte.NewProcessor(NewProgressHandler())
 	handler := NewProgressHandler()
-	
+
 	totalSteps := 100
 	delayMs := time.Duration((durationSecs * 1000) / totalSteps)
-	
+
 	for i := 0; i <= totalSteps; i++ {
-		// 计算进度条宽度（50个字符宽）
+		// Calculate progress bar width (50 characters wide)
 		filled := (i * 50) / totalSteps
 		empty := 50 - filled
-		
-		// 构造进度条序列：\r + 进度条内容
-		progressText := fmt.Sprintf("\r[%s%s] %d%%", 
+
+		// Construct progress bar sequence: \r + progress bar content
+		progressText := fmt.Sprintf("\r[%s%s] %d%%",
 			repeatString("=", filled),
 			repeatString(" ", empty),
 			i)
-		
-		// 使用GoVTE处理序列
+
+		// Use GoVTE to process the sequence
 		processor.Advance(handler, []byte(progressText))
 		handler.Flush()
-		
+
 		if i < totalSteps {
 			time.Sleep(delayMs * time.Millisecond)
 		}
 	}
-	
-	handler.PrintLineDirect(" 完成!")
+
+	handler.PrintLineDirect(" Complete!")
 }
 
-// animatedProgressBar 带动画的进度条 - 有移动的指示器
+// animatedProgressBar animated progress bar - with moving indicator
 func animatedProgressBar(durationSecs int) {
-	fmt.Printf("\n带动画的进度条（%d秒）:\n", durationSecs)
-	
+	fmt.Printf("\nAnimated progress bar (%d seconds):\n", durationSecs)
+
 	processor := govte.NewProcessor(NewProgressHandler())
 	handler := NewProgressHandler()
-	
+
 	totalSteps := 100
 	delayMs := time.Duration((durationSecs * 1000) / totalSteps)
-	
+
 	for i := 0; i <= totalSteps; i++ {
 		spinner := GetSpinner(i, "braille")
 		bar := handler.RenderUnicodeBar(i, 50)
-		
-		// 构造带动画的进度条
+
+		// Construct animated progress bar
 		progressText := fmt.Sprintf("\r%c %s", spinner, bar)
-		
+
 		processor.Advance(handler, []byte(progressText))
 		handler.Flush()
-		
+
 		if i < totalSteps {
 			time.Sleep(delayMs * time.Millisecond)
 		}
 	}
-	
+
 	handler.PrintLineDirect(" ✓")
 }
 
-// coloredProgressBar 彩色进度条 - 使用 ANSI 颜色代码通过GoVTE处理
+// coloredProgressBar colored progress bar - uses ANSI color codes processed through GoVTE
 func coloredProgressBar(durationSecs int) {
-	fmt.Printf("\n彩色进度条（%d秒）:\n", durationSecs)
-	
+	fmt.Printf("\nColored progress bar (%d seconds):\n", durationSecs)
+
 	processor := govte.NewProcessor(NewProgressHandler())
 	handler := NewProgressHandler()
-	
+
 	totalSteps := 100
 	delayMs := time.Duration((durationSecs * 1000) / totalSteps)
-	
+
 	for i := 0; i <= totalSteps; i++ {
 		bar := handler.RenderColoredBar(i, 50)
-		
-		// 使用 \r 回车符进行行内更新
+
+		// Use \r carriage return for in-line updates
 		progressText := fmt.Sprintf("\r%s", bar)
-		
+
 		processor.Advance(handler, []byte(progressText))
 		handler.Flush()
-		
+
 		if i < totalSteps {
 			time.Sleep(delayMs * time.Millisecond)
 		}
 	}
-	
-	handler.PrintLineDirect(" 完成!")
+
+	handler.PrintLineDirect(" Complete!")
 }
 
-// multiProgressBars 多任务进度条 - 同时显示多个进度
+// multiProgressBars multi-task progress bars - display multiple progress simultaneously
 func multiProgressBars() {
-	fmt.Println("\n多任务进度条（模拟下载）:")
-	
+	fmt.Println("\nMulti-task progress bars (simulating downloads):")
+
 	processor := govte.NewProcessor(NewProgressHandler())
 	handler := NewProgressHandler()
-	
-	// 保存光标位置 - 通过GoVTE处理
+
+	// Save cursor position - processed through GoVTE
 	processor.Advance(handler, []byte("\x1b[s"))
-	
-	// 准备显示区域
-	handler.PrintLineDirect("文件 1: [                                                  ] 0%")
-	handler.PrintLineDirect("文件 2: [                                                  ] 0%")
-	handler.PrintLineDirect("文件 3: [                                                  ] 0%")
-	handler.PrintLineDirect("总进度: [                                                  ] 0%")
-	
+
+	// Prepare display area
+	handler.PrintLineDirect("File 1: [                                                  ] 0%")
+	handler.PrintLineDirect("File 2: [                                                  ] 0%")
+	handler.PrintLineDirect("File 3: [                                                  ] 0%")
+	handler.PrintLineDirect("Total: [                                                  ] 0%")
+
 	progress := [3]int{0, 0, 0}
-	speeds := [3]int{3, 5, 2} // 不同的下载速度
-	
+	speeds := [3]int{3, 5, 2} // Different download speeds
+
 	start := time.Now()
-	
+
 	for hasIncompleteTask(progress[:]) {
-		// 更新每个进度
+		// Update each progress
 		for i := 0; i < 3; i++ {
 			if progress[i] < 100 {
-				progress[i] = min(progress[i] + speeds[i], 100)
+				progress[i] = min(progress[i]+speeds[i], 100)
 			}
 		}
-		
-		// 计算总进度
+
+		// Calculate total progress
 		totalProgress := (progress[0] + progress[1] + progress[2]) / 3
-		
-		// 恢复光标位置并更新显示 - 通过GoVTE处理ANSI序列
-		processor.Advance(handler, []byte("\x1b[u")) // 恢复光标位置
-		
+
+		// Restore cursor position and update display - process ANSI sequences through GoVTE
+		processor.Advance(handler, []byte("\x1b[u")) // Restore cursor position
+
 		for i := 0; i < 3; i++ {
-			// 向下移动光标到对应行
+			// Move cursor down to corresponding line
 			moveSeq := fmt.Sprintf("\x1b[%dB", i+1)
 			processor.Advance(handler, []byte(moveSeq))
-			
-			// 更新进度条
+
+			// Update progress bar
 			bar := renderFileProgressBar(progress[i], 50)
-			updateText := fmt.Sprintf("\r文件 %d: %s", i+1, bar)
+			updateText := fmt.Sprintf("\rFile %d: %s", i+1, bar)
 			processor.Advance(handler, []byte(updateText))
-			
+
 			if i < 2 {
-				processor.Advance(handler, []byte("\x1b[u")) // 恢复到起始位置
+				processor.Advance(handler, []byte("\x1b[u")) // Restore to starting position
 			}
 		}
-		
-		// 显示总进度
-		processor.Advance(handler, []byte("\x1b[u\x1b[4B")) // 恢复位置并移动到总进度行
+
+		// Display total progress
+		processor.Advance(handler, []byte("\x1b[u\x1b[4B")) // Restore position and move to total progress line
 		totalBar := renderTotalProgressBar(totalProgress, 50)
-		totalText := fmt.Sprintf("\r总进度: %s", totalBar)
+		totalText := fmt.Sprintf("\rTotal: %s", totalBar)
 		processor.Advance(handler, []byte(totalText))
-		
+
 		handler.Flush()
 		time.Sleep(100 * time.Millisecond)
-		
-		// 防止运行时间过长
+
+		// Prevent running too long
 		if time.Since(start).Seconds() > 10 {
 			break
 		}
 	}
-	
-	handler.PrintLineDirect("\n\n✅ 所有下载完成!")
+
+	handler.PrintLineDirect("\n\n✅ All downloads complete!")
 }
 
-// streamingProgress 实时数据流进度（模拟日志输出）
+// streamingProgress real-time data stream progress (simulating log output)
 func streamingProgress() {
-	fmt.Println("\n实时数据流（模拟日志处理）:")
+	fmt.Println("\nReal-time data stream (simulating log processing):")
 	fmt.Println(repeatString("─", 60))
-	
+
 	processor := govte.NewProcessor(NewProgressHandler())
 	handler := NewProgressHandler()
-	
+
 	messages := []string{
-		"初始化系统...",
-		"加载配置文件...",
-		"连接数据库...",
-		"验证权限...",
-		"加载模块...",
-		"启动服务...",
-		"监听端口 8080...",
-		"系统就绪",
+		"Initializing system...",
+		"Loading configuration files...",
+		"Connecting to database...",
+		"Verifying permissions...",
+		"Loading modules...",
+		"Starting services...",
+		"Listening on port 8080...",
+		"System ready",
 	}
-	
+
 	for i, msg := range messages {
-		// 显示处理中的动画
+		// Display processing animation
 		for j := 0; j < 8; j++ {
 			spinner := GetSpinner(j, "blocks")
 			statusText := fmt.Sprintf("\r%c %s", spinner, msg)
-			
+
 			processor.Advance(handler, []byte(statusText))
 			handler.Flush()
 			time.Sleep(125 * time.Millisecond)
 		}
-		
-		// 完成当前步骤
+
+		// Complete current step
 		progress := ((i + 1) * 100) / len(messages)
 		completeText := fmt.Sprintf("\r✓ %s [%d%%]\n", msg, progress)
 		processor.Advance(handler, []byte(completeText))
 		handler.Flush()
-		
+
 		time.Sleep(200 * time.Millisecond)
 	}
-	
+
 	handler.PrintLineDirect(repeatString("─", 60))
-	handler.PrintLineDirect("🚀 系统启动完成!")
+	handler.PrintLineDirect("🚀 System startup complete!")
 }
 
-// 辅助函数
+// Helper functions
 
-// repeatString 重复字符串n次（Go 1.21之前版本的strings.Repeat替代）
+// repeatString repeats a string n times (alternative to strings.Repeat for Go versions before 1.21)
 func repeatString(s string, count int) string {
 	if count <= 0 {
 		return ""
@@ -229,7 +229,7 @@ func repeatString(s string, count int) string {
 	return result
 }
 
-// hasIncompleteTask 检查是否有未完成的任务
+// hasIncompleteTask checks if there are incomplete tasks
 func hasIncompleteTask(progress []int) bool {
 	for _, p := range progress {
 		if p < 100 {
@@ -239,7 +239,7 @@ func hasIncompleteTask(progress []int) bool {
 	return false
 }
 
-// min 返回两个整数中的较小值
+// min returns the smaller of two integers
 func min(a, b int) int {
 	if a < b {
 		return a
@@ -247,15 +247,15 @@ func min(a, b int) int {
 	return b
 }
 
-// renderFileProgressBar 渲染文件下载进度条
+// renderFileProgressBar renders file download progress bar
 func renderFileProgressBar(progress, width int) string {
 	filled := (progress * width) / 100
-	
+
 	bar := "["
 	for j := 0; j < width; j++ {
 		if j < filled {
 			if progress == 100 {
-				bar += "\x1b[32m=\x1b[0m" // 完成时显示绿色
+				bar += "\x1b[32m=\x1b[0m" // Show green when complete
 			} else {
 				bar += "="
 			}
@@ -266,56 +266,56 @@ func renderFileProgressBar(progress, width int) string {
 		}
 	}
 	bar += fmt.Sprintf("] %d%%", progress)
-	
+
 	return bar
 }
 
-// renderTotalProgressBar 渲染总进度条
+// renderTotalProgressBar renders total progress bar
 func renderTotalProgressBar(progress, width int) string {
 	filled := (progress * width) / 100
-	
+
 	bar := "["
 	for j := 0; j < width; j++ {
 		if j < filled {
-			bar += "\x1b[36m▓\x1b[0m" // 青色
+			bar += "\x1b[36m▓\x1b[0m" // Cyan
 		} else {
 			bar += "░"
 		}
 	}
 	bar += fmt.Sprintf("] %d%%", progress)
-	
+
 	return bar
 }
 
 func main() {
-	fmt.Println("=== 动画进度条示例 (GoVTE) ===\n")
-	
-	// 检查终端是否支持UTF-8
+	fmt.Println("=== Animated Progress Bar Example (GoVTE) ===")
+
+	// Check if terminal supports UTF-8
 	if os.Getenv("LANG") == "" {
-		fmt.Println("注意: 如果显示异常，请确保终端支持UTF-8编码")
+		fmt.Println("Note: If display is abnormal, please ensure your terminal supports UTF-8 encoding")
 		fmt.Println()
 	}
-	
-	// 示例 1: 简单进度条
+
+	// Example 1: Simple progress bar
 	simpleProgressBar(3)
-	
-	// 示例 2: 带动画的进度条
+
+	// Example 2: Animated progress bar
 	animatedProgressBar(3)
-	
-	// 示例 3: 彩色进度条
+
+	// Example 3: Colored progress bar
 	coloredProgressBar(3)
-	
-	// 示例 4: 多任务进度条
+
+	// Example 4: Multi-task progress bars
 	multiProgressBars()
-	
-	// 示例 5: 实时数据流
+
+	// Example 5: Real-time data stream
 	streamingProgress()
-	
-	fmt.Println("\n所有示例完成！")
-	fmt.Println("\n本示例展示了GoVTE库的以下功能:")
-	fmt.Println("• ANSI转义序列解析和处理")
-	fmt.Println("• 终端光标控制和定位")
-	fmt.Println("• 颜色序列处理和渲染") 
-	fmt.Println("• 实时输出和缓冲区管理")
-	fmt.Println("• Unicode字符支持")
+
+	fmt.Println("\nAll examples completed!")
+	fmt.Println("\nThis example demonstrates the following GoVTE library features:")
+	fmt.Println("• ANSI escape sequence parsing and processing")
+	fmt.Println("• Terminal cursor control and positioning")
+	fmt.Println("• Color sequence processing and rendering")
+	fmt.Println("• Real-time output and buffer management")
+	fmt.Println("• Unicode character support")
 }

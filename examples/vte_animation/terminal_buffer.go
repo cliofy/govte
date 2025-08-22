@@ -4,25 +4,25 @@ import (
 	"github.com/cliofy/govte"
 )
 
-// TerminalBuffer 实现了终端缓冲区，类似Rust版本的TerminalBuffer
-// 它实现了govte.Performer接口来处理VTE解析器的回调
+// TerminalBuffer implements terminal buffer, similar to Rust version TerminalBuffer
+// It implements the govte.Performer interface to handle VTE parser callbacks
 type TerminalBuffer struct {
-	// 屏幕缓冲区 - 二维字符数组
+	// Screen buffer - 2D character array
 	buffer [][]rune
-	// 光标位置
+	// Cursor position
 	cursorRow int
 	cursorCol int
-	// 终端尺寸
+	// Terminal dimensions
 	width  int
 	height int
 }
 
-// NewTerminalBuffer 创建一个新的终端缓冲区
+// NewTerminalBuffer creates a new terminal buffer
 func NewTerminalBuffer(width, height int) *TerminalBuffer {
 	buffer := make([][]rune, height)
 	for i := range buffer {
 		buffer[i] = make([]rune, width)
-		// 初始化为空格字符
+		// Initialize with space characters
 		for j := range buffer[i] {
 			buffer[i][j] = ' '
 		}
@@ -37,7 +37,7 @@ func NewTerminalBuffer(width, height int) *TerminalBuffer {
 	}
 }
 
-// Clear 清空缓冲区并重置光标
+// Clear clears buffer and resets cursor
 func (t *TerminalBuffer) Clear() {
 	for i := range t.buffer {
 		for j := range t.buffer[i] {
@@ -48,30 +48,30 @@ func (t *TerminalBuffer) Clear() {
 	t.cursorCol = 0
 }
 
-// GetBuffer 获取缓冲区内容（用于渲染）
+// GetBuffer gets buffer content (for rendering)
 func (t *TerminalBuffer) GetBuffer() [][]rune {
 	return t.buffer
 }
 
-// GetCursor 获取当前光标位置
+// GetCursor gets current cursor position
 func (t *TerminalBuffer) GetCursor() (int, int) {
 	return t.cursorRow, t.cursorCol
 }
 
-// GetDimensions 获取终端尺寸
+// GetDimensions gets terminal dimensions
 func (t *TerminalBuffer) GetDimensions() (int, int) {
 	return t.width, t.height
 }
 
-// === 实现 govte.Performer 接口 ===
+// === Implement govte.Performer interface ===
 
-// Print 处理可打印字符
+// Print handles printable characters
 func (t *TerminalBuffer) Print(c rune) {
 	if t.cursorRow < t.height && t.cursorCol < t.width {
 		t.buffer[t.cursorRow][t.cursorCol] = c
 		t.cursorCol++
 		
-		// 自动换行
+		// Auto line wrap
 		if t.cursorCol >= t.width {
 			t.cursorCol = 0
 			if t.cursorRow < t.height-1 {
@@ -81,45 +81,45 @@ func (t *TerminalBuffer) Print(c rune) {
 	}
 }
 
-// Execute 处理控制字符
+// Execute handles control characters
 func (t *TerminalBuffer) Execute(b byte) {
 	switch b {
-	case 0x08: // BS - 退格
+	case 0x08: // BS - Backspace
 		if t.cursorCol > 0 {
 			t.cursorCol--
 		}
-	case 0x0A: // LF - 换行
+	case 0x0A: // LF - Line Feed
 		if t.cursorRow < t.height-1 {
 			t.cursorRow++
 		}
-	case 0x0D: // CR - 回车
+	case 0x0D: // CR - Carriage Return
 		t.cursorCol = 0
 	}
 }
 
-// Hook DCS序列开始（暂不实现）
+// Hook DCS sequence start (not implemented yet)
 func (t *TerminalBuffer) Hook(params *govte.Params, intermediates []byte, ignore bool, action rune) {
 }
 
-// Put DCS数据（暂不实现）
+// Put DCS data (not implemented yet)
 func (t *TerminalBuffer) Put(b byte) {
 }
 
-// Unhook DCS序列结束（暂不实现）
+// Unhook DCS sequence end (not implemented yet)
 func (t *TerminalBuffer) Unhook() {
 }
 
-// OscDispatch 处理OSC序列（暂不实现）
+// OscDispatch handles OSC sequences (not implemented yet)
 func (t *TerminalBuffer) OscDispatch(params [][]byte, bellTerminated bool) {
 }
 
-// CsiDispatch 处理CSI序列（核心终端控制）
+// CsiDispatch handles CSI sequences (core terminal control)
 func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte, ignore bool, action rune) {
 	if ignore {
 		return
 	}
 	
-	// 将Params转换为[]uint16切片以便处理
+	// Convert Params to []uint16 slice for processing
 	var paramsVec []uint16
 	if params != nil {
 		groups := params.Iter()
@@ -131,7 +131,7 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 	}
 	
 	switch action {
-	case 'H', 'f': // CUP - 光标定位
+	case 'H', 'f': // CUP - Cursor Position
 		row := 1
 		col := 1
 		
@@ -142,7 +142,7 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 			col = int(paramsVec[1])
 		}
 		
-		// 转换为0基索引并限制在有效范围内
+		// Convert to 0-based index and limit to valid range
 		t.cursorRow = min(row-1, t.height-1)
 		t.cursorCol = min(col-1, t.width-1)
 		if t.cursorRow < 0 {
@@ -152,9 +152,9 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 			t.cursorCol = 0
 		}
 		
-	case 'J': // ED - 擦除显示
+	case 'J': // ED - Erase Display
 		if len(paramsVec) == 0 || paramsVec[0] == 0 {
-			// 清除从光标到屏幕末尾
+			// Clear from cursor to end of screen
 			for row := t.cursorRow; row < t.height; row++ {
 				startCol := 0
 				if row == t.cursorRow {
@@ -165,7 +165,7 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 				}
 			}
 		} else if paramsVec[0] == 1 {
-			// 清除从屏幕开始到光标
+			// Clear from beginning of screen to cursor
 			for row := 0; row <= t.cursorRow; row++ {
 				endCol := t.width
 				if row == t.cursorRow {
@@ -176,7 +176,7 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 				}
 			}
 		} else if paramsVec[0] == 2 {
-			// 清除整个屏幕
+			// Clear entire screen
 			for row := range t.buffer {
 				for col := range t.buffer[row] {
 					t.buffer[row][col] = ' '
@@ -186,48 +186,48 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 			t.cursorCol = 0
 		}
 		
-	case 'K': // EL - 擦除行
+	case 'K': // EL - Erase Line
 		if t.cursorRow < t.height {
 			if len(paramsVec) == 0 || paramsVec[0] == 0 {
-				// 清除到行尾
+				// Clear to end of line
 				for col := t.cursorCol; col < t.width; col++ {
 					t.buffer[t.cursorRow][col] = ' '
 				}
 			} else if paramsVec[0] == 1 {
-				// 清除行首到光标
+				// Clear from beginning of line to cursor
 				for col := 0; col <= t.cursorCol && col < t.width; col++ {
 					t.buffer[t.cursorRow][col] = ' '
 				}
 			} else if paramsVec[0] == 2 {
-				// 清除整行
+				// Clear entire line
 				for col := 0; col < t.width; col++ {
 					t.buffer[t.cursorRow][col] = ' '
 				}
 			}
 		}
 		
-	case 'A': // CUU - 光标上移
+	case 'A': // CUU - Cursor Up
 		lines := 1
 		if len(paramsVec) > 0 && paramsVec[0] > 0 {
 			lines = int(paramsVec[0])
 		}
 		t.cursorRow = max(0, t.cursorRow-lines)
 		
-	case 'B': // CUD - 光标下移  
+	case 'B': // CUD - Cursor Down  
 		lines := 1
 		if len(paramsVec) > 0 && paramsVec[0] > 0 {
 			lines = int(paramsVec[0])
 		}
 		t.cursorRow = min(t.height-1, t.cursorRow+lines)
 		
-	case 'C': // CUF - 光标右移
+	case 'C': // CUF - Cursor Forward
 		cols := 1
 		if len(paramsVec) > 0 && paramsVec[0] > 0 {
 			cols = int(paramsVec[0])
 		}
 		t.cursorCol = min(t.width-1, t.cursorCol+cols)
 		
-	case 'D': // CUB - 光标左移
+	case 'D': // CUB - Cursor Back
 		cols := 1
 		if len(paramsVec) > 0 && paramsVec[0] > 0 {
 			cols = int(paramsVec[0])
@@ -236,11 +236,11 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 	}
 }
 
-// EscDispatch 处理ESC序列（暂不实现）
+// EscDispatch handles ESC sequences (not implemented yet)
 func (t *TerminalBuffer) EscDispatch(intermediates []byte, ignore bool, b byte) {
 }
 
-// 辅助函数
+// Helper functions
 func min(a, b int) int {
 	if a < b {
 		return a

@@ -5,38 +5,38 @@ import (
 	"time"
 )
 
-// 简单的线性同余随机数生成器
-// 类似Rust版本，避免引入额外依赖
+// Simple linear congruential random number generator
+// Similar to Rust version, avoids introducing extra dependencies
 type SimpleRand struct {
 	seed uint64
 	mu   sync.Mutex
 }
 
-// 全局随机数生成器实例
+// Global random number generator instance
 var globalRand = &SimpleRand{
 	seed: uint64(time.Now().UnixNano()),
 }
 
-// Random 随机数生成器接口
+// Random random number generator interface
 type Random interface {
 	Random() interface{}
 }
 
-// RandomInt 生成随机整数
+// RandomInt generates random integer
 func RandomInt() int {
 	return int(RandomUint64())
 }
 
-// RandomUint64 生成随机uint64
+// RandomUint64 generates random uint64
 func RandomUint64() uint64 {
 	globalRand.mu.Lock()
 	defer globalRand.mu.Unlock()
 	
-	// 使用线性同余生成器 (LCG)
-	// 参数来自Numerical Recipes
+	// Use linear congruential generator (LCG)
+	// Parameters from Numerical Recipes
 	globalRand.seed = (globalRand.seed*1664525 + 1013904223) & 0xFFFFFFFF
 	
-	// 使用xorshift增加随机性
+	// Use xorshift to increase randomness
 	x := globalRand.seed
 	x ^= x << 13
 	x ^= x >> 17
@@ -46,12 +46,12 @@ func RandomUint64() uint64 {
 	return x
 }
 
-// RandomFloat32 生成0.0到1.0之间的随机浮点数
+// RandomFloat32 generates random float between 0.0 and 1.0
 func RandomFloat32() float32 {
 	return float32(RandomUint64()) / float32(^uint64(0))
 }
 
-// RandomRange 生成指定范围内的随机整数 [min, max)
+// RandomRange generates random integer in range [min, max)
 func RandomRange(min, max int) int {
 	if min >= max {
 		return min
@@ -59,12 +59,12 @@ func RandomRange(min, max int) int {
 	return min + int(RandomUint64())%(max-min)
 }
 
-// RandomBool 生成随机布尔值
+// RandomBool generates random boolean
 func RandomBool() bool {
 	return RandomUint64()%2 == 0
 }
 
-// RandomChoice 从切片中随机选择一个元素
+// RandomChoice randomly selects an element from slice
 func RandomChoice[T any](slice []T) T {
 	if len(slice) == 0 {
 		var zero T
@@ -74,7 +74,7 @@ func RandomChoice[T any](slice []T) T {
 	return slice[idx]
 }
 
-// RandomString 生成随机字符串
+// RandomString generates random string
 func RandomString(chars string, length int) string {
 	if length <= 0 || len(chars) == 0 {
 		return ""
@@ -91,7 +91,7 @@ func RandomString(chars string, length int) string {
 	return string(result)
 }
 
-// Shuffle 随机打乱切片
+// Shuffle randomly shuffles slice
 func Shuffle[T any](slice []T) {
 	for i := len(slice) - 1; i > 0; i-- {
 		j := RandomRange(0, i+1)
@@ -99,18 +99,18 @@ func Shuffle[T any](slice []T) {
 	}
 }
 
-// SetSeed 设置随机数种子
+// SetSeed sets random seed
 func SetSeed(seed uint64) {
 	globalRand.mu.Lock()
 	defer globalRand.mu.Unlock()
 	globalRand.seed = seed
 }
 
-// 特定用途的随机函数
+// Random functions for specific purposes
 
-// RandomMatrixChar 生成矩阵雨效果的随机字符
+// RandomMatrixChar generates random character for matrix rain effect
 func RandomMatrixChar() rune {
-	// 数字和一些日文片假名字符（类似电影《黑客帝国》）
+	// Numbers and some Japanese katakana characters (like in The Matrix movie)
 	chars := []rune{
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'ア', 'イ', 'ウ', 'エ', 'オ',
@@ -122,12 +122,12 @@ func RandomMatrixChar() rune {
 	return RandomChoice(chars)
 }
 
-// RandomASCII 生成可打印ASCII字符
+// RandomASCII generates printable ASCII character
 func RandomASCII() rune {
-	return rune(RandomRange(33, 127)) // 可打印ASCII范围
+	return rune(RandomRange(33, 127)) // Printable ASCII range
 }
 
-// RandomEmoji 生成随机emoji（用于演示）
+// RandomEmoji generates random emoji (for demo)
 func RandomEmoji() string {
 	emojis := []string{
 		"🌟", "⭐", "💫", "✨", "🔥", "💎", "🎯", "🚀",

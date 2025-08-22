@@ -1,7 +1,7 @@
-//! GoVTE 动画终端演示
+//! GoVTE Animated Terminal Demo
 //! 
-//! 展示如何将 GoVTE 与实时更新结合，创建各种终端动画效果
-//! 这是Rust版本vte_animation.rs的Go实现
+//! Demonstrates how to combine GoVTE with real-time updates to create various terminal animation effects
+//! This is a Go implementation of the Rust version vte_animation.rs
 
 package main
 
@@ -12,115 +12,115 @@ import (
 )
 
 func main() {
-	// 检查终端支持
+	// Check terminal support
 	if !checkTerminalSupport() {
-		fmt.Println("警告: 终端可能不完全支持所需功能，显示效果可能异常")
+		fmt.Println("Warning: Terminal may not fully support required features, display may be abnormal")
 		time.Sleep(2 * time.Second)
 	}
 	
-	// 进入 alternate screen buffer，隐藏光标，并清屏
+	// Enter alternate screen buffer, hide cursor, and clear screen
 	EnterAlternateScreen()
 	
-	// 确保退出时恢复终端状态
+	// Ensure terminal state is restored on exit
 	defer func() {
 		ExitAlternateScreen()
-		fmt.Println("感谢使用 GoVTE 动画演示！")
+		fmt.Println("Thank you for using the GoVTE animation demo!")
 	}()
 	
-	// 在 alternate screen 中显示标题
-	fmt.Print("\x1b[1;1H=== VTE 动画终端演示 (GoVTE) ===")
-	fmt.Print("\x1b[2;1H使用 GoVTE 解析器实现各种终端动画效果")
-	fmt.Print("\x1b[4;1H本演示包含以下动画:")
-	fmt.Print("\x1b[5;3H• 📊 动画进度条")
-	fmt.Print("\x1b[6;3H• ⌨️  打字机效果")
-	fmt.Print("\x1b[7;3H• 💊 矩阵雨效果")
-	fmt.Print("\x1b[8;3H• 📈 实时图表")
-	fmt.Print("\x1b[9;3H• 🌊 波浪动画 (增强)")
-	fmt.Print("\x1b[10;3H• 🌀 螺旋动画 (增强)")
-	fmt.Print("\x1b[11;3H• 🎆 烟花动画 (创新)")
-	fmt.Print("\x1b[13;1H按 Ctrl+C 可随时退出")
-	fmt.Print("\x1b[15;1H正在启动演示...")
+	// Display title in alternate screen
+	fmt.Print("\x1b[1;1H=== VTE Animated Terminal Demo (GoVTE) ===")
+	fmt.Print("\x1b[2;1HImplementing various terminal animation effects using GoVTE parser")
+	fmt.Print("\x1b[4;1HThis demo includes the following animations:")
+	fmt.Print("\x1b[5;3H• 📊 Animated Progress Bar")
+	fmt.Print("\x1b[6;3H• ⌨️  Typewriter Effect")
+	fmt.Print("\x1b[7;3H• 💊 Matrix Rain Effect")
+	fmt.Print("\x1b[8;3H• 📈 Live Chart")
+	fmt.Print("\x1b[9;3H• 🌊 Wave Animation (Enhanced)")
+	fmt.Print("\x1b[10;3H• 🌀 Spiral Animation (Enhanced)")
+	fmt.Print("\x1b[11;3H• 🎆 Fireworks Animation (Innovative)")
+	fmt.Print("\x1b[13;1HPress Ctrl+C to exit at any time")
+	fmt.Print("\x1b[15;1HStarting demo...")
 	os.Stdout.Sync()
 	
-	// 启动倒计时
+	// Start countdown
 	for i := 3; i > 0; i-- {
-		fmt.Printf("\x1b[15;15H开始倒计时: %d", i)
+		fmt.Printf("\x1b[15;15HCountdown: %d", i)
 		os.Stdout.Sync()
 		time.Sleep(1 * time.Second)
 	}
 	
-	// 运行各个演示
+	// Run each demo
 	runAllDemos()
 	
-	// 显示完成信息
+	// Display completion message
 	fmt.Print("\x1b[H\x1b[2J")
-	fmt.Print("\x1b[10;20H✨ 所有演示完成！")
-	fmt.Print("\x1b[12;15H本演示展示了GoVTE的强大功能:")
-	fmt.Print("\x1b[13;17H• VTE解析器的ANSI序列处理")
-	fmt.Print("\x1b[14;17H• 终端缓冲区管理和渲染")
-	fmt.Print("\x1b[15;17H• 实时动画和视觉效果")
-	fmt.Print("\x1b[16;17H• 光标控制和屏幕操作")
-	fmt.Print("\x1b[18;20H感谢观看！3秒后自动退出...")
+	fmt.Print("\x1b[10;20H✨ All demos completed!")
+	fmt.Print("\x1b[12;15HThis demo showcases the powerful features of GoVTE:")
+	fmt.Print("\x1b[13;17H• VTE parser's ANSI sequence processing")
+	fmt.Print("\x1b[14;17H• Terminal buffer management and rendering")
+	fmt.Print("\x1b[15;17H• Real-time animations and visual effects")
+	fmt.Print("\x1b[16;17H• Cursor control and screen operations")
+	fmt.Print("\x1b[18;20HThanks for watching! Auto-exit in 3 seconds...")
 	os.Stdout.Sync()
 	time.Sleep(3 * time.Second)
 }
 
-// runAllDemos 运行所有演示
+// runAllDemos runs all demos
 func runAllDemos() {
 	demos := []struct {
 		name string
 		fn   func()
 	}{
-		{"动画进度条", DemoProgressBar},
-		{"打字机效果", DemoTypewriter},
-		{"矩阵雨效果", DemoMatrixRain},
-		{"实时图表", DemoLiveChart},
-		{"波浪动画", DemoWaveAnimation},
-		{"螺旋动画", DemoSpiralAnimation},
-		{"烟花动画", DemoFireworks},
+		{"Animated Progress Bar", DemoProgressBar},
+		{"Typewriter Effect", DemoTypewriter},
+		{"Matrix Rain Effect", DemoMatrixRain},
+		{"Live Chart", DemoLiveChart},
+		{"Wave Animation", DemoWaveAnimation},
+		{"Spiral Animation", DemoSpiralAnimation},
+		{"Fireworks Animation", DemoFireworks},
 	}
 	
 	for i, demo := range demos {
-		// 显示当前演示信息
+		// Display current demo information
 		showDemoTransition(i+1, len(demos), demo.name)
 		
-		// 运行演示
+		// Run the demo
 		demo.fn()
 		
-		// 演示间的间隔
+		// Interval between demos
 		if i < len(demos)-1 {
-			showTransitionMessage("准备下一个演示...")
+			showTransitionMessage("Preparing next demo...")
 			time.Sleep(1 * time.Second)
 		}
 	}
 }
 
-// showDemoTransition 显示演示切换信息
+// showDemoTransition displays demo transition information
 func showDemoTransition(current, total int, name string) {
-	fmt.Print("\x1b[H\x1b[2J") // 清屏
-	fmt.Printf("\x1b[8;20H演示进度: %d/%d", current, total)
-	fmt.Printf("\x1b[10;20H当前演示: %s%s%s", ColorBrightYellow, name, ColorReset)
-	fmt.Print("\x1b[12;25H准备中...")
+	fmt.Print("\x1b[H\x1b[2J") // Clear screen
+	fmt.Printf("\x1b[8;20HDemo Progress: %d/%d", current, total)
+	fmt.Printf("\x1b[10;20HCurrent Demo: %s%s%s", ColorBrightYellow, name, ColorReset)
+	fmt.Print("\x1b[12;25HPreparing...")
 	os.Stdout.Sync()
 	time.Sleep(800 * time.Millisecond)
 }
 
-// showTransitionMessage 显示过渡消息
+// showTransitionMessage displays transition message
 func showTransitionMessage(message string) {
 	fmt.Print("\x1b[H\x1b[2J")
 	fmt.Printf("\x1b[10;%dH%s", (80-len(message))/2, message)
 	os.Stdout.Sync()
 }
 
-// checkTerminalSupport 检查终端支持情况
+// checkTerminalSupport checks terminal support
 func checkTerminalSupport() bool {
-	// 检查基本环境变量
+	// Check basic environment variables
 	term := os.Getenv("TERM")
 	if term == "" {
 		return false
 	}
 	
-	// 检查是否支持彩色
+	// Check if colors are supported
 	colorTerm := os.Getenv("COLORTERM")
 	if colorTerm == "" && term != "xterm-256color" && term != "screen-256color" {
 		return false
@@ -129,8 +129,8 @@ func checkTerminalSupport() bool {
 	return true
 }
 
-// 演示功能说明
+// Demo functionality description
 func init() {
-	// 设置随机种子
+	// Set random seed
 	SetSeed(uint64(time.Now().UnixNano()))
 }
