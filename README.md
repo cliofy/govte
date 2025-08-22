@@ -13,7 +13,7 @@ GoVTE is a Go implementation of a VTE (Virtual Terminal Emulator) parser, provid
 - 🖥️ **TUI Program Capture** - Capture and render real TUI applications
 - ⚡ **High Performance** - Optimized state machine implementation
 
-![htop render example](./docs/pics/htop-render.png)
+![htop render example](./doc/pics/htop-render.png)
 
 ## Installation
 
@@ -199,3 +199,10 @@ Contributions are welcome! Please ensure:
 ## License
 
 MIT License - see LICENSE file for details.
+
+## Acknowledgments
+
+This project is inspired by:
+
+- [alacritty/vte](https://github.com/alacritty/vte) - A state machine based VTE parser in Rust, which provides the foundation for terminal emulation parsing
+- [zellij-org/zellij](https://github.com/zellij-org/zellij) - A terminal workspace with innovative approaches to terminal multiplexing and rendering
