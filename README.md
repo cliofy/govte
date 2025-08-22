@@ -1,7 +1,6 @@
 # GoVTE
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/cliofy/govte.svg)](https://pkg.go.dev/github.com/cliofy/govte)
-[![Go Report Card](https://goreportcard.com/badge/github.com/cliofy/govte)](https://goreportcard.com/report/github.com/cliofy/govte)
 
 GoVTE is a Go implementation of a VTE (Virtual Terminal Emulator) parser, providing robust ANSI escape sequence parsing and complete terminal emulation capabilities.
 
