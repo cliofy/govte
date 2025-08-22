@@ -13,6 +13,8 @@ GoVTE is a Go implementation of a VTE (Virtual Terminal Emulator) parser, provid
 - 🖥️ **TUI Program Capture** - Capture and render real TUI applications
 - ⚡ **High Performance** - Optimized state machine implementation
 
+![htop render example](./docs/pics/htop-render.png)
+
 ## Installation
 
 ```bash
