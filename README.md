@@ -27,27 +27,29 @@ go get github.com/cliofy/govte
 package main
 
 import (
-    "fmt"
-    "github.com/cliofy/govte"
-    "github.com/cliofy/govte/terminal"
+	"fmt"
+
+	"github.com/cliofy/govte"
+	"github.com/cliofy/govte/terminal"
 )
 
 func main() {
-    parser := govte.NewParser()
-    terminalBuffer := terminal.NewTerminalBuffer(80, 24)
-    
-    // Parse ANSI colored text
-    input := []byte("Hello \x1b[31mRed\x1b[0m World!")
-    for _, b := range input {
-        parser.Advance(terminalBuffer, []byte{b})
-    }
-    
-    fmt.Println(terminalBuffer.GetDisplay())
-    
-    // Or use convenience functions
-    output := terminal.ParseBytesWithColors([]byte("\x1b[32mGreen\x1b[0m"), 80, 24)
-    fmt.Println(output)
+	parser := govte.NewParser()
+	terminalBuffer := terminal.NewTerminalBuffer(80, 24)
+
+	// Parse ANSI colored text
+	input := []byte("Hello \x1b[31mRed\x1b[0m World!")
+	for _, b := range input {
+		parser.Advance(terminalBuffer, []byte{b})
+	}
+
+	fmt.Println(terminalBuffer.GetDisplayWithColors())
+
+	// Or use convenience functions
+	output := terminal.ParseBytesWithColors([]byte("\x1b[32mGreen\x1b[0m"), 80, 24)
+	fmt.Println(output)
 }
+
 ```
 
 ## Core Components

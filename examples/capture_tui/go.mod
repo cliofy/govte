@@ -6,8 +6,5 @@ replace github.com/cliofy/govte => ../..
 
 require (
 	github.com/cliofy/govte v0.0.0-00010101000000-000000000000
-	github.com/creack/pty v1.1.21
-	golang.org/x/term v0.15.0
+	github.com/creack/pty v1.1.24
 )
-
-require golang.org/x/sys v0.15.0 // indirect

@@ -1,234 +1,86 @@
-//! Example of capturing and rendering TUI program output (using the new terminal module)
-//!
-//! This example demonstrates how to use the new TerminalBuffer implementation:
-//! 1. Start TUI programs (like htop) in a pseudo terminal (PTY)
-//! 2. Capture the program's output stream
-//! 3. Parse and render output using GoVTE's terminal module
-
 package main
 
 import (
-	"context"
 	"fmt"
-	"io"
-	"log"
-	"os"
 	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/cliofy/govte"
 	"github.com/cliofy/govte/terminal"
 	"github.com/creack/pty"
-	"golang.org/x/term"
 )
 
-// getTerminalSize gets the current terminal size, returns default values if failed
-func getTerminalSize() (int, int) {
-	width, height, err := term.GetSize(int(os.Stdin.Fd()))
-	if err != nil {
-		return 120, 40 // default size
-	}
-	return width, height
-}
-
-// captureTUIOutput captures TUI program output
-func captureTUIOutput(program string, args []string, duration time.Duration) ([]byte, int, int, error) {
-	fmt.Printf("Starting %s ...\n", program)
-
-	// Get current terminal size
-	width, height := getTerminalSize()
-	fmt.Printf("Detected terminal size: %dx%d\n", width, height)
-
-	// Create command
-	cmd := exec.Command(program, args...)
-
-	// Set environment variables
-	cmd.Env = append(os.Environ(), "TERM=xterm-256color")
-
-	// Create PTY
+func main() {
+	// Start htop
+	cmd := exec.Command("htop")
 	ptmx, err := pty.Start(cmd)
 	if err != nil {
-		return nil, 0, 0, fmt.Errorf("unable to create PTY: %w", err)
+		fmt.Printf("Error: %v\n", err)
+		return
 	}
 	defer ptmx.Close()
+	defer cmd.Process.Kill()
 
-	// Set PTY size
-	err = pty.Setsize(ptmx, &pty.Winsize{
-		Rows: uint16(height),
-		Cols: uint16(width),
+	// Set terminal size
+	pty.Setsize(ptmx, &pty.Winsize{
+		Rows: uint16(24),
+		Cols: uint16(80),
 	})
-	if err != nil {
-		log.Printf("Warning: unable to set PTY size: %v", err)
-	}
 
-	fmt.Printf("Program started, PID: %d\n", cmd.Process.Pid)
-	fmt.Printf("Starting output capture (%.0f seconds)...\n", duration.Seconds())
+	// Create parser and terminal buffer
+	parser := govte.NewParser()
+	term := terminal.NewTerminalBuffer(80, 24)
 
-	// Collect output
-	var output []byte
-	buffer := make([]byte, 4096)
-
-	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), duration)
-	defer cancel()
-
-	// Use goroutine to read data
+	// Channel to signal completion
 	done := make(chan bool)
+
+	// Goroutine to continuously read and parse output
 	go func() {
-		defer close(done)
+		buf := make([]byte, 4096)
 		for {
 			select {
-			case <-ctx.Done():
+			case <-done:
 				return
 			default:
-				// Set read timeout
 				ptmx.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-				n, err := ptmx.Read(buffer)
-				if err != nil {
-					if err != io.EOF && !os.IsTimeout(err) {
-						log.Printf("Read error: %v", err)
-					}
-					continue
-				}
+				n, _ := ptmx.Read(buf)
 				if n > 0 {
-					output = append(output, buffer[:n]...)
-					// Show capture progress
-					fmt.Printf("\rCaptured %d bytes", len(output))
+					// Parse bytes into terminal buffer
+					for i := 0; i < n; i++ {
+						parser.Advance(term, []byte{buf[i]})
+					}
 				}
 			}
 		}
 	}()
 
-	// Wait for timeout or completion
-	<-ctx.Done()
+	// Timer to print terminal content every second
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-	// Give read goroutine some time to complete
-	select {
-	case <-done:
-	case <-time.After(100 * time.Millisecond):
-	}
+	// Timer to exit after 5 seconds
+	timeout := time.After(5 * time.Second)
 
-	fmt.Println("\nCapture complete, shutting down program...")
+	// Initial wait for htop to start
+	time.Sleep(200 * time.Millisecond)
 
-	// Try to gracefully terminate the program
-	if cmd.Process != nil {
-		cmd.Process.Kill()
-		cmd.Wait()
-	}
+	fmt.Println("Starting htop monitoring (5 seconds)...")
 
-	// Give the program some time to clean up
-	time.Sleep(100 * time.Millisecond)
+	for {
+		select {
+		case <-ticker.C:
+			// Clear screen (ANSI escape code)
+			fmt.Print("\033[H\033[2J")
+			// Print current terminal buffer
+			fmt.Println("=== Terminal Output (Updated every 1s) ===")
+			fmt.Println(term.GetDisplayWithColors())
+			fmt.Println("\n[Press Ctrl+C to exit early]")
 
-	return output, width, height, nil
-}
-
-// renderOutput renders output using the new TerminalBuffer
-func renderOutput(data []byte, width, height int, withColors bool) string {
-	parser := govte.NewParser()
-	terminalBuffer := terminal.NewTerminalBuffer(width, height)
-
-	// Parse all data
-	for _, b := range data {
-		parser.Advance(terminalBuffer, []byte{b})
-	}
-
-	fmt.Println("\n=== Render Statistics ===")
-	fmt.Printf("Captured bytes: %d\n", len(data))
-	fmt.Printf("Terminal size: %dx%d\n", width, height)
-
-	cursorX, cursorY := terminalBuffer.CursorPosition()
-	fmt.Printf("Cursor position: (%d, %d)\n", cursorX+1, cursorY+1)
-
-	fmt.Printf("Color output: %s\n", map[bool]string{true: "Enabled", false: "Disabled"}[withColors])
-
-	if withColors {
-		return terminalBuffer.GetDisplayWithColors()
-	}
-	return terminalBuffer.GetDisplay()
-}
-
-func main() {
-	fmt.Println("=== GoVTE TUI Program Capture Example ===")
-
-	// Check if color output is enabled
-	enableColors := false
-	for _, arg := range os.Args[1:] {
-		if arg == "--colors" || arg == "-c" {
-			enableColors = true
-			break
+		case <-timeout:
+			// Signal goroutine to stop
+			close(done)
+			fmt.Println("\n5 seconds elapsed. Exiting...")
+			return
 		}
-	}
-
-	if enableColors {
-		fmt.Println("🎨 Color output mode enabled")
-	} else {
-		fmt.Println("💡 Tip: Use --colors or -c flag to enable color output")
-	}
-	fmt.Println()
-
-	// Try different TUI programs
-	programs := []struct {
-		name string
-		args []string
-	}{
-		{"htop", []string{}},
-		{"btm", []string{}},
-		{"top", []string{}},
-		{"ps", []string{"aux"}},
-	}
-
-	var capturedData []byte
-	var usedProgram string
-	var terminalWidth, terminalHeight int
-
-	// Try to find an available program
-	for _, prog := range programs {
-		data, width, height, err := captureTUIOutput(prog.name, prog.args, 3*time.Second)
-		if err != nil {
-			fmt.Printf("Unable to run %s: %v\n", prog.name, err)
-			if prog.name == "htop" {
-				fmt.Println("Tip: Please install htop (e.g., apt install htop or brew install htop)")
-			}
-			continue
-		}
-
-		capturedData = data
-		terminalWidth = width
-		terminalHeight = height
-		usedProgram = prog.name
-		break
-	}
-
-	// Render captured output
-	if capturedData != nil {
-		fmt.Printf("\nSuccessfully captured %s output\n", usedProgram)
-		fmt.Println("\n=== Final Rendered Frame ===")
-
-		rendered := renderOutput(capturedData, terminalWidth, terminalHeight, enableColors)
-
-		// Output rendered result directly (avoid Unicode character truncation issues)
-		lines := strings.Split(rendered, "\n")
-		for _, line := range lines {
-			fmt.Println(line)
-		}
-
-		// Optional: save raw data to file
-		for _, arg := range os.Args[1:] {
-			if arg == "--save" {
-				filename := fmt.Sprintf("%s_capture.dat", usedProgram)
-				err := os.WriteFile(filename, capturedData, 0644)
-				if err != nil {
-					log.Printf("Failed to save file: %v", err)
-				} else {
-					fmt.Printf("\nRaw data saved to: %s\n", filename)
-				}
-				break
-			}
-		}
-	} else {
-		fmt.Println("\nError: Unable to capture any TUI program output")
-		fmt.Println("Please ensure at least one of htop, top, or ps is installed")
-		os.Exit(1)
 	}
 }
