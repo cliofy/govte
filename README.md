@@ -49,6 +49,48 @@ func main() {
 	output := terminal.ParseBytesWithColors([]byte("\x1b[32mGreen\x1b[0m"), 80, 24)
 	fmt.Println(output)
 }
+```
+
+## TUI Program Capture
+
+Capture and render real TUI applications:
+
+```go
+import (
+	"fmt"
+	"os/exec"
+	"time"
+
+	"github.com/cliofy/govte"
+	"github.com/cliofy/govte/terminal"
+	"github.com/creack/pty"
+)
+
+func main() {
+	// Start a TUI program in a PTY
+	cmd := exec.Command("htop")
+	ptmx, err := pty.Start(cmd)
+	if err != nil {
+		panic(err)
+	}
+
+	time.Sleep(500 * time.Millisecond)
+
+	// Capture output
+	var output []byte
+	buffer := make([]byte, 4096)
+	n, _ := ptmx.Read(buffer)
+	output = append(output, buffer[:n]...)
+
+	// Parse and render
+	parser := govte.NewParser()
+	terminal := terminal.NewTerminalBuffer(80, 24)
+	for _, b := range output {
+		parser.Advance(terminal, []byte{b})
+	}
+
+	fmt.Println(terminal.GetDisplayWithColors())
+}
 
 ```
 
@@ -122,39 +164,6 @@ func (l *LoggingPerformer) CsiDispatch(params *govte.Params, intermediates []byt
 }
 ```
 
-### TUI Program Capture
-
-Capture and render real TUI applications:
-
-```go
-import (
-    "github.com/creack/pty"
-    "os/exec"
-)
-
-// Start a TUI program in a PTY
-cmd := exec.Command("htop")
-ptmx, err := pty.Start(cmd)
-if err != nil {
-    panic(err)
-}
-
-// Capture output
-var output []byte
-buffer := make([]byte, 4096)
-n, _ := ptmx.Read(buffer)
-output = append(output, buffer[:n]...)
-
-// Parse and render
-parser := govte.NewParser()
-terminal := terminal.NewTerminalBuffer(120, 40)
-for _, b := range output {
-    parser.Advance(terminal, []byte{b})
-}
-
-fmt.Println(terminal.GetDisplayWithColors())
-```
-
 ### Color Handling
 
 ```go
@@ -174,7 +183,7 @@ The repository includes several example programs:
 
 ```bash
 cd examples/parselog && go run main.go
-cd examples/capture_tui && go build && ./capture_tui --colors
+cd examples/capture_tui && go build && ./capture_tui
 ```
 
 ## Supported Features
