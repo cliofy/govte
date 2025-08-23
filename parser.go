@@ -1,3 +1,50 @@
+// Package govte provides a high-performance VTE (Virtual Terminal Emulator) parser
+// for Go, implementing complete ANSI escape sequence parsing and terminal emulation.
+//
+// GoVTE is inspired by the Rust alacritty/vte library and provides a production-ready
+// implementation suitable for building terminal emulators, processing terminal output,
+// and capturing TUI applications.
+//
+// # Basic Usage
+//
+// The simplest way to use GoVTE is through the convenience functions:
+//
+//	import "github.com/cliofy/govte/terminal"
+//	
+//	// Parse ANSI colored text
+//	output := terminal.ParseBytesWithColors([]byte("\x1b[31mRed Text\x1b[0m"), 80, 24)
+//	fmt.Println(output)
+//
+// # Advanced Usage
+//
+// For more control, you can use the Parser with a custom Performer:
+//
+//	parser := govte.NewParser()
+//	terminal := terminal.NewTerminalBuffer(80, 24)
+//	
+//	// Process input bytes
+//	for _, b := range input {
+//	    parser.Advance(terminal, []byte{b})
+//	}
+//	
+//	// Get the rendered output
+//	output := terminal.GetDisplay()
+//
+// # Custom Performer
+//
+// You can implement the Performer interface for custom behavior:
+//
+//	type MyPerformer struct {
+//	    govte.NoopPerformer
+//	}
+//	
+//	func (p *MyPerformer) Print(c rune) {
+//	    fmt.Printf("Character: %c\n", c)
+//	}
+//	
+//	func (p *MyPerformer) CsiDispatch(params *govte.Params, intermediates []byte, ignore bool, action rune) {
+//	    fmt.Printf("CSI: %c with params %v\n", action, params)
+//	}
 package govte
 
 import (

@@ -1,6 +1,11 @@
 # GoVTE
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/cliofy/govte.svg)](https://pkg.go.dev/github.com/cliofy/govte)
+[![CI Status](https://github.com/cliofy/govte/workflows/CI/badge.svg)](https://github.com/cliofy/govte/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cliofy/govte)](https://goreportcard.com/report/github.com/cliofy/govte)
+[![Coverage Status](https://codecov.io/gh/cliofy/govte/branch/main/graph/badge.svg)](https://codecov.io/gh/cliofy/govte)
+[![Release](https://img.shields.io/github/v/release/cliofy/govte)](https://github.com/cliofy/govte/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 GoVTE is a Go implementation of a VTE (Virtual Terminal Emulator) parser, providing robust ANSI escape sequence parsing and complete terminal emulation capabilities.
 
@@ -16,8 +21,17 @@ GoVTE is a Go implementation of a VTE (Virtual Terminal Emulator) parser, provid
 ## Installation
 
 ```bash
-go get github.com/cliofy/govte
+# Install the latest version
+go get github.com/cliofy/govte@latest
+
+# Or install a specific version
+go get github.com/cliofy/govte@v0.2.0
 ```
+
+### Requirements
+
+- Go 1.21 or higher
+- No external runtime dependencies
 
 ## Quick Start
 
