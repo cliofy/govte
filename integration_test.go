@@ -14,8 +14,8 @@ type IntegrationPerformer struct {
 }
 
 type IntegrationAction struct {
-	Type   string
-	Data   interface{}
+	Type string
+	Data interface{}
 }
 
 func (p *IntegrationPerformer) Print(c rune) {
@@ -98,23 +98,23 @@ func TestIntegrationCompleteTerminalSequence(t *testing.T) {
 
 	// Simulate a terminal session with various sequences
 	sequences := [][]byte{
-		[]byte("Hello, "),                      // Plain text
-		[]byte("\x1b[31m"),                     // Set foreground red
-		[]byte("World"),                         // More text
-		[]byte("\x1b[0m"),                       // Reset
-		[]byte("\r\n"),                          // Carriage return + line feed
-		[]byte("\x1b[2J"),                       // Clear screen
-		[]byte("\x1b[H"),                        // Cursor home
-		[]byte("\x1b]0;Terminal Title\x07"),    // Set window title
-		[]byte("\x1b[?25l"),                     // Hide cursor
-		[]byte("Line 1"),                        // Text
-		[]byte("\x1b[2;1H"),                     // Move cursor to row 2, col 1
-		[]byte("Line 2"),                        // Text
-		[]byte("\x1b[?25h"),                     // Show cursor
-		[]byte("\x1bP1$qm\x1b\\"),               // DECRQSS (DCS sequence)
-		[]byte("\x1b[38:2:255:128:64m"),        // RGB color with subparameters
-		[]byte("Colored"),                       // Text
-		[]byte("\x1b[m"),                        // Reset
+		[]byte("Hello, "),                   // Plain text
+		[]byte("\x1b[31m"),                  // Set foreground red
+		[]byte("World"),                     // More text
+		[]byte("\x1b[0m"),                   // Reset
+		[]byte("\r\n"),                      // Carriage return + line feed
+		[]byte("\x1b[2J"),                   // Clear screen
+		[]byte("\x1b[H"),                    // Cursor home
+		[]byte("\x1b]0;Terminal Title\x07"), // Set window title
+		[]byte("\x1b[?25l"),                 // Hide cursor
+		[]byte("Line 1"),                    // Text
+		[]byte("\x1b[2;1H"),                 // Move cursor to row 2, col 1
+		[]byte("Line 2"),                    // Text
+		[]byte("\x1b[?25h"),                 // Show cursor
+		[]byte("\x1bP1$qm\x1b\\"),           // DECRQSS (DCS sequence)
+		[]byte("\x1b[38:2:255:128:64m"),     // RGB color with subparameters
+		[]byte("Colored"),                   // Text
+		[]byte("\x1b[m"),                    // Reset
 	}
 
 	for _, seq := range sequences {
@@ -160,9 +160,9 @@ func TestIntegrationColoredOutput(t *testing.T) {
 	// Simulate colored output like from ls --color
 	input := []byte(
 		"\x1b[0m\x1b[01;34mdir1\x1b[0m  " +
-		"\x1b[01;32mexecutable\x1b[0m  " +
-		"normal.txt  " +
-		"\x1b[01;35mlink\x1b[0m\n")
+			"\x1b[01;32mexecutable\x1b[0m  " +
+			"normal.txt  " +
+			"\x1b[01;35mlink\x1b[0m\n")
 
 	parser.Advance(performer, input)
 
@@ -266,13 +266,13 @@ func TestIntegrationComplexSGR(t *testing.T) {
 
 	// Complex SGR with multiple attributes
 	sequences := []string{
-		"\x1b[0m",                          // Reset
-		"\x1b[1;4;31m",                     // Bold, underline, red
-		"\x1b[38;5;128m",                   // 256-color foreground
-		"\x1b[38:2:100:150:200m",           // RGB foreground with subparameters
-		"\x1b[48;2;50;75;100m",             // RGB background with semicolons
-		"\x1b[1;3;4;5;7;9m",                // Multiple attributes
-		"\x1b[21;22;23;24;25;27;28;29m",    // Reset various attributes
+		"\x1b[0m",                       // Reset
+		"\x1b[1;4;31m",                  // Bold, underline, red
+		"\x1b[38;5;128m",                // 256-color foreground
+		"\x1b[38:2:100:150:200m",        // RGB foreground with subparameters
+		"\x1b[48;2;50;75;100m",          // RGB background with semicolons
+		"\x1b[1;3;4;5;7;9m",             // Multiple attributes
+		"\x1b[21;22;23;24;25;27;28;29m", // Reset various attributes
 	}
 
 	for _, seq := range sequences {
@@ -367,11 +367,11 @@ func TestIntegrationErrorRecovery(t *testing.T) {
 	// Mix of valid and potentially malformed sequences
 	sequences := [][]byte{
 		[]byte("Valid text"),
-		[]byte("\x1b["), // Incomplete CSI
+		[]byte("\x1b["),                  // Incomplete CSI
 		[]byte("999999999999999999999m"), // Overflow attempt
 		[]byte("More valid text"),
 		[]byte("\x1b]"), // Incomplete OSC
-		[]byte("\x07"), // Stray BEL
+		[]byte("\x07"),  // Stray BEL
 		[]byte("Final text"),
 	}
 

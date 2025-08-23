@@ -36,7 +36,7 @@ func (c *Cursor) MoveUp(n int) {
 
 // MoveDown moves cursor down by n lines
 func (c *Cursor) MoveDown(n int) {
-	c.Y = c.Y + n
+	c.Y += n
 }
 
 // MoveLeft moves cursor left by n columns
@@ -46,7 +46,7 @@ func (c *Cursor) MoveLeft(n int) {
 
 // MoveRight moves cursor right by n columns
 func (c *Cursor) MoveRight(n int) {
-	c.X = c.X + n
+	c.X += n
 }
 
 // CarriageReturn moves cursor to beginning of line
@@ -56,7 +56,7 @@ func (c *Cursor) CarriageReturn() {
 
 // LineFeed moves cursor to next line
 func (c *Cursor) LineFeed() {
-	c.Y = c.Y + 1
+	c.Y++
 }
 
 // NewLine moves cursor to next line and beginning of line

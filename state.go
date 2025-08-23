@@ -58,8 +58,7 @@ func (s State) IsValid() bool {
 func (s State) Transition(b byte) State {
 	switch s {
 	case StateGround:
-		switch b {
-		case 0x1B: // ESC
+		if b == 0x1B { // ESC
 			return StateEscape
 		}
 	case StateEscape:
@@ -79,7 +78,7 @@ func (s State) Transition(b byte) State {
 		// For most other characters, return to ground
 		return StateGround
 	}
-	
+
 	// Default: stay in current state
 	return s
 }

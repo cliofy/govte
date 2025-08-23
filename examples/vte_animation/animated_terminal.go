@@ -41,13 +41,13 @@ func (a *AnimatedTerminal) ProcessString(input string) {
 func (a *AnimatedTerminal) Render() {
 	width, height := a.buffer.GetDimensions()
 	buffer := a.buffer.GetBuffer()
-	
+
 	// Hide cursor to avoid flickering
 	fmt.Print("\x1b[?25l")
-	
+
 	// Use absolute positioning to draw top border (line 1)
 	fmt.Printf("\x1b[1;1H┌%s┐\x1b[K", strings.Repeat("─", width))
-	
+
 	// Use absolute positioning to draw each line content
 	for i, line := range buffer {
 		// Position to line i+2 (because line 1 is the top border)
@@ -57,14 +57,14 @@ func (a *AnimatedTerminal) Render() {
 		}
 		fmt.Print("│\x1b[K") // Draw right border and clear to end of line
 	}
-	
+
 	// Use absolute positioning to draw bottom border
 	bottomRow := height + 2
 	fmt.Printf("\x1b[%d;1H└%s┘\x1b[K", bottomRow, strings.Repeat("─", width))
-	
+
 	// Restore cursor display
 	fmt.Print("\x1b[?25h")
-	
+
 	// Flush output
 	os.Stdout.Sync()
 }
@@ -134,7 +134,7 @@ const (
 	ColorMagenta = "\x1b[35m"
 	ColorCyan    = "\x1b[36m"
 	ColorWhite   = "\x1b[37m"
-	
+
 	// Bright colors
 	ColorBrightRed     = "\x1b[91m"
 	ColorBrightGreen   = "\x1b[92m"

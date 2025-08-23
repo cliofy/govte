@@ -110,24 +110,24 @@ func (r *Row) ToString() string {
 // VisibleWidth gets the visible width of the row (excluding trailing spaces)
 func (r *Row) VisibleWidth() int {
 	lastNonSpace := -1
-	
+
 	// Find the last non-space character
 	for i, character := range r.Columns {
 		if character.Character != ' ' {
 			lastNonSpace = i
 		}
 	}
-	
+
 	if lastNonSpace == -1 {
 		return 0
 	}
-	
+
 	// Calculate width up to the last non-space character
 	width := 0
 	for i := 0; i <= lastNonSpace; i++ {
 		width += r.Columns[i].Width
 	}
-	
+
 	return width
 }
 
@@ -139,7 +139,7 @@ func (r *Row) ReplaceRange(start, end int, character TerminalCharacter) {
 	if end > len(r.Columns) {
 		end = len(r.Columns)
 	}
-	
+
 	for i := start; i < end; i++ {
 		r.Columns[i] = character
 	}

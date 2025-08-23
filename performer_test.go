@@ -8,14 +8,14 @@ import (
 
 // MockPerformer is a test implementation of the Performer interface
 type MockPerformer struct {
-	printed        []rune
-	executed       []byte
-	csiDispatched  []CSIDispatch
-	escDispatched  []ESCDispatch
-	oscDispatched  []OSCDispatch
-	hookCalled     bool
-	unhookCalled   bool
-	putBytes       []byte
+	printed       []rune
+	executed      []byte
+	csiDispatched []CSIDispatch
+	escDispatched []ESCDispatch
+	oscDispatched []OSCDispatch
+	hookCalled    bool
+	unhookCalled  bool
+	putBytes      []byte
 }
 
 type CSIDispatch struct {
@@ -70,7 +70,7 @@ func (m *MockPerformer) CsiDispatch(params *Params, intermediates []byte, ignore
 		// Copy the params data
 		*paramsCopy = *params
 	}
-	
+
 	m.csiDispatched = append(m.csiDispatched, CSIDispatch{
 		params:        paramsCopy,
 		intermediates: append([]byte(nil), intermediates...), // Copy intermediates too

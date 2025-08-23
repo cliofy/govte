@@ -31,17 +31,17 @@ func RandomInt() int {
 func RandomUint64() uint64 {
 	globalRand.mu.Lock()
 	defer globalRand.mu.Unlock()
-	
+
 	// Use linear congruential generator (LCG)
 	// Parameters from Numerical Recipes
 	globalRand.seed = (globalRand.seed*1664525 + 1013904223) & 0xFFFFFFFF
-	
+
 	// Use xorshift to increase randomness
 	x := globalRand.seed
 	x ^= x << 13
 	x ^= x >> 17
 	x ^= x << 5
-	
+
 	globalRand.seed = x
 	return x
 }
@@ -79,15 +79,15 @@ func RandomString(chars string, length int) string {
 	if length <= 0 || len(chars) == 0 {
 		return ""
 	}
-	
+
 	result := make([]byte, length)
 	charRunes := []rune(chars)
-	
+
 	for i := 0; i < length; i++ {
 		idx := RandomRange(0, len(charRunes))
 		result[i] = byte(charRunes[idx])
 	}
-	
+
 	return string(result)
 }
 

@@ -40,10 +40,10 @@ func NewTerminalBuffer(width, height int) *TerminalBuffer {
 	}
 
 	return &TerminalBuffer{
-		width:        width,
-		height:       height,
-		viewport:     viewport,
-		cursor:       NewCursor(),
+		width:         width,
+		height:        height,
+		viewport:      viewport,
+		cursor:        NewCursor(),
 		currentStyles: DefaultCharacterStyles(),
 	}
 }
@@ -51,14 +51,14 @@ func NewTerminalBuffer(width, height int) *TerminalBuffer {
 // GetDisplay returns the rendered display as plain text
 func (tb *TerminalBuffer) GetDisplay() string {
 	var result strings.Builder
-	
+
 	for i, row := range tb.viewport {
 		result.WriteString(row.ToString())
 		if i < len(tb.viewport)-1 {
 			result.WriteString("\n")
 		}
 	}
-	
+
 	return strings.TrimRight(result.String(), " \t\n")
 }
 
@@ -66,40 +66,40 @@ func (tb *TerminalBuffer) GetDisplay() string {
 func (tb *TerminalBuffer) GetDisplayWithColors() string {
 	var result strings.Builder
 	currentStyles := DefaultCharacterStyles()
-	
+
 	for rowIdx, row := range tb.viewport {
 		for _, character := range row.Columns {
 			// Only emit style changes when styles actually change
 			if character.Styles.DiffersFrom(&currentStyles) {
 				// Reset if we had any previous styles
 				defaultStyles := DefaultCharacterStyles()
-		if !currentStyles.equals(&defaultStyles) {
+				if !currentStyles.equals(&defaultStyles) {
 					result.WriteString("\x1b[0m")
 				}
-				
+
 				// Apply new styles
 				styleSequence := character.Styles.ToAnsiSequence()
 				if styleSequence != "" {
 					result.WriteString(styleSequence)
 				}
-				
+
 				currentStyles = character.Styles
 			}
-			
+
 			result.WriteRune(character.Character)
 		}
-		
+
 		if rowIdx < len(tb.viewport)-1 {
 			result.WriteString("\n")
 		}
 	}
-	
+
 	// Reset styles at the end if we had any
 	defaultStyles := DefaultCharacterStyles()
 	if !currentStyles.equals(&defaultStyles) {
 		result.WriteString("\x1b[0m")
 	}
-	
+
 	return strings.TrimRight(result.String(), " \t\n")
 }
 
@@ -117,7 +117,7 @@ func (tb *TerminalBuffer) CursorPosition() (int, int) {
 func (tb *TerminalBuffer) Resize(width, height int) {
 	tb.width = width
 	tb.height = height
-	
+
 	// Resize existing rows
 	for i := range tb.viewport {
 		tb.viewport[i].EnsureWidth(width)
@@ -125,7 +125,7 @@ func (tb *TerminalBuffer) Resize(width, height int) {
 			tb.viewport[i].Truncate(width)
 		}
 	}
-	
+
 	// Add or remove rows as needed
 	if len(tb.viewport) < height {
 		// Add new rows
@@ -136,7 +136,7 @@ func (tb *TerminalBuffer) Resize(width, height int) {
 		// Remove excess rows
 		tb.viewport = tb.viewport[:height]
 	}
-	
+
 	// Ensure cursor is within bounds
 	if tb.cursor.X >= width {
 		tb.cursor.X = width - 1
@@ -151,19 +151,19 @@ func (tb *TerminalBuffer) Resize(width, height int) {
 // Print handles printable characters
 func (tb *TerminalBuffer) Print(c rune) {
 	tb.ensureCursorInBounds()
-	
+
 	// Create character with current styles
 	char := NewStyledTerminalCharacter(c, tb.currentStyles)
-	
+
 	// Ensure the current row has enough width
 	if tb.cursor.Y < len(tb.viewport) {
 		tb.viewport[tb.cursor.Y].EnsureWidth(tb.width)
-		
+
 		// Place the character
 		if tb.cursor.X < tb.width {
 			tb.viewport[tb.cursor.Y].Set(tb.cursor.X, char)
 			tb.cursor.MoveRight(char.Width)
-			
+
 			// Handle line wrapping
 			if tb.cursor.X >= tb.width {
 				tb.cursor.CarriageReturn()
@@ -222,14 +222,14 @@ func (tb *TerminalBuffer) OscDispatch(params [][]byte, bellTerminated bool) {
 	if len(params) == 0 {
 		return
 	}
-	
+
 	// Parse OSC command
 	if len(params[0]) == 0 {
 		return
 	}
-	
+
 	cmd := string(params[0])
-	
+
 	// Handle different OSC commands
 	switch cmd {
 	case "0", "2": // Set window title
@@ -250,13 +250,13 @@ func (tb *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte
 	if ignore {
 		return
 	}
-	
+
 	// Convert params to [][]uint16 for easier processing
 	var paramGroups [][]uint16
 	if params != nil {
 		paramGroups = params.Iter()
 	}
-	
+
 	switch action {
 	case 'H', 'f': // CUP - Cursor Position
 		row, col := 1, 1
@@ -266,12 +266,12 @@ func (tb *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte
 		if len(paramGroups) > 1 && len(paramGroups[1]) > 0 {
 			col = int(paramGroups[1][0])
 		}
-		
+
 		// Convert to 0-based and clamp to screen bounds
 		tb.cursor.X = min(col-1, tb.width-1)
 		tb.cursor.Y = min(row-1, tb.height-1)
 		tb.ensureCursorInBounds()
-		
+
 	case 'A': // CUU - Cursor Up
 		lines := 1
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 && paramGroups[0][0] > 0 {
@@ -279,7 +279,7 @@ func (tb *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte
 		}
 		tb.cursor.MoveUp(lines)
 		tb.ensureCursorInBounds()
-		
+
 	case 'B': // CUD - Cursor Down
 		lines := 1
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 && paramGroups[0][0] > 0 {
@@ -287,7 +287,7 @@ func (tb *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte
 		}
 		tb.cursor.MoveDown(lines)
 		tb.ensureCursorInBounds()
-		
+
 	case 'C': // CUF - Cursor Forward
 		cols := 1
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 && paramGroups[0][0] > 0 {
@@ -295,7 +295,7 @@ func (tb *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte
 		}
 		tb.cursor.MoveRight(cols)
 		tb.ensureCursorInBounds()
-		
+
 	case 'D': // CUB - Cursor Back
 		cols := 1
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 && paramGroups[0][0] > 0 {
@@ -303,7 +303,7 @@ func (tb *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte
 		}
 		tb.cursor.MoveLeft(cols)
 		tb.ensureCursorInBounds()
-		
+
 	case 'G': // CHA - Cursor Horizontal Absolute
 		col := 1
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 {
@@ -311,7 +311,7 @@ func (tb *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte
 		}
 		tb.cursor.X = min(col-1, tb.width-1)
 		tb.ensureCursorInBounds()
-		
+
 	case 'd': // VPA - Vertical Position Absolute
 		row := 1
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 {
@@ -319,25 +319,25 @@ func (tb *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte
 		}
 		tb.cursor.Y = min(row-1, tb.height-1)
 		tb.ensureCursorInBounds()
-		
+
 	case 'J': // ED - Erase in Display
 		mode := 0
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 {
 			mode = int(paramGroups[0][0])
 		}
 		tb.eraseInDisplay(mode)
-		
+
 	case 'K': // EL - Erase in Line
 		mode := 0
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 {
 			mode = int(paramGroups[0][0])
 		}
 		tb.eraseInLine(mode)
-		
+
 	case 'm': // SGR - Select Graphic Rendition
 		tb.currentStyles.AddStyleFromAnsiParams(paramGroups)
 		tb.cursor.PendingStyles = tb.currentStyles
-		
+
 	case 'r': // DECSTBM - Set Top and Bottom Margins
 		top, bottom := 1, tb.height
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 {
@@ -346,31 +346,31 @@ func (tb *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte
 		if len(paramGroups) > 1 && len(paramGroups[1]) > 0 {
 			bottom = int(paramGroups[1][0])
 		}
-		
+
 		if top < bottom && top >= 1 && bottom <= tb.height {
 			tb.scrollRegion = &ScrollRegion{
 				top:    top - 1, // Convert to 0-based
 				bottom: bottom - 1,
 			}
 		}
-		
+
 	case 's': // SCOSC - Save Cursor Position
 		saved := tb.cursor.SavePosition()
 		tb.savedCursor = &saved
-		
+
 	case 'u': // SCORC - Restore Cursor Position
 		if tb.savedCursor != nil {
 			tb.cursor.RestorePosition(*tb.savedCursor)
 			tb.currentStyles = tb.cursor.PendingStyles
 		}
-		
+
 	case 'S': // SU - Scroll Up
 		lines := 1
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 {
 			lines = int(paramGroups[0][0])
 		}
 		tb.scrollUp(lines)
-		
+
 	case 'T': // SD - Scroll Down
 		lines := 1
 		if len(paramGroups) > 0 && len(paramGroups[0]) > 0 {
@@ -385,7 +385,7 @@ func (tb *TerminalBuffer) EscDispatch(intermediates []byte, ignore bool, b byte)
 	if ignore {
 		return
 	}
-	
+
 	switch b {
 	case 'D': // IND - Index (move cursor down, scroll if needed)
 		tb.cursor.LineFeed()
@@ -430,7 +430,7 @@ func (tb *TerminalBuffer) ensureCursorInBounds() {
 // eraseInDisplay handles ED command
 func (tb *TerminalBuffer) eraseInDisplay(mode int) {
 	emptyChar := EmptyTerminalCharacter()
-	
+
 	switch mode {
 	case 0: // Clear from cursor to end of display
 		// Clear from cursor to end of current line
@@ -443,7 +443,7 @@ func (tb *TerminalBuffer) eraseInDisplay(mode int) {
 		for y := tb.cursor.Y + 1; y < len(tb.viewport); y++ {
 			tb.viewport[y].Clear()
 		}
-		
+
 	case 1: // Clear from beginning of display to cursor
 		// Clear all lines above current line
 		for y := 0; y < tb.cursor.Y && y < len(tb.viewport); y++ {
@@ -455,7 +455,7 @@ func (tb *TerminalBuffer) eraseInDisplay(mode int) {
 				tb.viewport[tb.cursor.Y].Set(x, emptyChar)
 			}
 		}
-		
+
 	case 2, 3: // Clear entire display
 		for y := range tb.viewport {
 			tb.viewport[y].Clear()
@@ -468,21 +468,21 @@ func (tb *TerminalBuffer) eraseInLine(mode int) {
 	if tb.cursor.Y >= len(tb.viewport) {
 		return
 	}
-	
+
 	emptyChar := EmptyTerminalCharacter()
 	row := &tb.viewport[tb.cursor.Y]
-	
+
 	switch mode {
 	case 0: // Clear from cursor to end of line
 		for x := tb.cursor.X; x < tb.width; x++ {
 			row.Set(x, emptyChar)
 		}
-		
+
 	case 1: // Clear from beginning of line to cursor
 		for x := 0; x <= tb.cursor.X && x < tb.width; x++ {
 			row.Set(x, emptyChar)
 		}
-		
+
 	case 2: // Clear entire line
 		row.Clear()
 	}
@@ -493,7 +493,7 @@ func (tb *TerminalBuffer) scrollUp(lines int) {
 	if lines <= 0 {
 		return
 	}
-	
+
 	// Determine scroll region
 	top := 0
 	bottom := tb.height - 1
@@ -501,7 +501,7 @@ func (tb *TerminalBuffer) scrollUp(lines int) {
 		top = tb.scrollRegion.top
 		bottom = tb.scrollRegion.bottom
 	}
-	
+
 	// Shift lines up within scroll region
 	for i := 0; i < lines; i++ {
 		if top < bottom {
@@ -524,7 +524,7 @@ func (tb *TerminalBuffer) scrollDown(lines int) {
 	if lines <= 0 {
 		return
 	}
-	
+
 	// Determine scroll region
 	top := 0
 	bottom := tb.height - 1
@@ -532,7 +532,7 @@ func (tb *TerminalBuffer) scrollDown(lines int) {
 		top = tb.scrollRegion.top
 		bottom = tb.scrollRegion.bottom
 	}
-	
+
 	// Shift lines down within scroll region
 	for i := 0; i < lines; i++ {
 		if top < bottom {
@@ -557,7 +557,7 @@ func (tb *TerminalBuffer) reset() {
 	tb.savedCursor = nil
 	tb.scrollRegion = nil
 	tb.title = nil
-	
+
 	// Clear all content
 	for i := range tb.viewport {
 		tb.viewport[i] = NewRowWithWidth(tb.width)

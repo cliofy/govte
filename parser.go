@@ -10,7 +10,7 @@
 // The simplest way to use GoVTE is through the convenience functions:
 //
 //	import "github.com/cliofy/govte/terminal"
-//	
+//
 //	// Parse ANSI colored text
 //	output := terminal.ParseBytesWithColors([]byte("\x1b[31mRed Text\x1b[0m"), 80, 24)
 //	fmt.Println(output)
@@ -21,12 +21,12 @@
 //
 //	parser := govte.NewParser()
 //	terminal := terminal.NewTerminalBuffer(80, 24)
-//	
+//
 //	// Process input bytes
 //	for _, b := range input {
 //	    parser.Advance(terminal, []byte{b})
 //	}
-//	
+//
 //	// Get the rendered output
 //	output := terminal.GetDisplay()
 //
@@ -37,11 +37,11 @@
 //	type MyPerformer struct {
 //	    govte.NoopPerformer
 //	}
-//	
+//
 //	func (p *MyPerformer) Print(c rune) {
 //	    fmt.Printf("Character: %c\n", c)
 //	}
-//	
+//
 //	func (p *MyPerformer) CsiDispatch(params *govte.Params, intermediates []byte, ignore bool, action rune) {
 //	    fmt.Printf("CSI: %c with params %v\n", action, params)
 //	}
@@ -62,20 +62,20 @@ const (
 
 // Parser is the VTE parser state machine
 type Parser struct {
-	state            State
-	intermediates    []byte
-	intermediateIdx  int
-	params           *Params
-	currentParam     uint16  // Current parameter being built
-	hasCurrentParam  bool    // Whether we have a current parameter
-	inSubparam       bool    // Whether we're in a subparameter group
-	oscRaw           []byte
-	oscParams        []int // Indices into oscRaw for parameter boundaries
-	oscNumParams     int
-	ignoring         bool
-	pendingESC       bool    // For DCS passthrough ESC tracking
-	partialUTF8      [4]byte
-	partialUTF8Len   int
+	state           State
+	intermediates   []byte
+	intermediateIdx int
+	params          *Params
+	currentParam    uint16 // Current parameter being built
+	hasCurrentParam bool   // Whether we have a current parameter
+	inSubparam      bool   // Whether we're in a subparameter group
+	oscRaw          []byte
+	oscParams       []int // Indices into oscRaw for parameter boundaries
+	oscNumParams    int
+	ignoring        bool
+	pendingESC      bool // For DCS passthrough ESC tracking
+	partialUTF8     [4]byte
+	partialUTF8Len  int
 }
 
 // NewParser creates a new VTE parser
@@ -97,7 +97,7 @@ func (p *Parser) State() State {
 // Advance processes input bytes through the state machine
 func (p *Parser) Advance(performer Performer, bytes []byte) {
 	i := 0
-	
+
 	// Handle partial UTF-8 from previous call
 	if p.partialUTF8Len > 0 {
 		consumed := p.advancePartialUTF8(performer, bytes)
@@ -108,7 +108,7 @@ func (p *Parser) Advance(performer Performer, bytes []byte) {
 			return
 		}
 	}
-	
+
 	for i < len(bytes) {
 		switch p.state {
 		case StateGround:
@@ -171,25 +171,26 @@ func (p *Parser) advanceGround(performer Performer, bytes []byte) int {
 		case b >= 0x20 && b < 0x7F: // Printable ASCII
 			performer.Print(rune(b))
 		case b >= 0x80: // UTF-8 or C1 control
-			if b >= 0xC0 {
+			switch {
+			case b >= 0xC0:
 				// Start of UTF-8 sequence
 				return i + p.handleUTF8(performer, bytes[i:])
-			} else if b == 0x90 {
+			case b == 0x90:
 				// DCS
 				p.state = StateDCSEntry
 				p.resetParams()
 				return i + 1
-			} else if b == 0x9B {
+			case b == 0x9B:
 				// CSI
 				p.state = StateCSIEntry
 				p.resetParams()
 				return i + 1
-			} else if b == 0x9D {
+			case b == 0x9D:
 				// OSC
 				p.state = StateOSCString
 				p.resetParams()
 				return i + 1
-			} else {
+			default:
 				// Invalid UTF-8 continuation byte without start - print replacement character
 				performer.Print(utf8.RuneError)
 			}
@@ -481,7 +482,7 @@ func (p *Parser) advanceDCSPassthrough(performer Performer, b byte) {
 		// BEL terminates DCS
 		performer.Unhook()
 		p.state = StateGround
-	case b >= 0x00 && b <= 0x06 || b >= 0x08 && b <= 0x17 || b == 0x19 || b >= 0x1C && b <= 0x7E:
+	case b <= 0x06 || b >= 0x08 && b <= 0x17 || b == 0x19 || b >= 0x1C && b <= 0x7E:
 		// If we had a pending ESC that wasn't part of ST, put it first
 		if p.pendingESC {
 			performer.Put(0x1B)
@@ -556,7 +557,7 @@ func (p *Parser) collectIntermediate(b byte) {
 
 func (p *Parser) paramDigit(b byte) {
 	digit := uint16(b - '0')
-	
+
 	if !p.hasCurrentParam {
 		// Start new parameter
 		p.currentParam = digit
@@ -595,7 +596,7 @@ func (p *Parser) paramSeparator() {
 			p.params.Push(0)
 		}
 	}
-	
+
 	// Reset for next parameter group
 	p.currentParam = 0
 	p.hasCurrentParam = false
@@ -654,7 +655,7 @@ func (p *Parser) csiDispatch(performer Performer, action byte) {
 			p.params.Push(p.currentParam)
 		}
 	}
-	
+
 	performer.CsiDispatch(p.params, p.intermediates, p.ignoring, rune(action))
 	p.resetParams()
 }
@@ -675,19 +676,19 @@ func (p *Parser) oscDispatch(performer Performer, bellTerminated bool) {
 	// Parse OSC parameters
 	params := make([][]byte, 0, p.oscNumParams+1)
 	start := 0
-	
+
 	for _, end := range p.oscParams {
 		if end > start && end <= len(p.oscRaw) {
 			params = append(params, p.oscRaw[start:end])
 			start = end
 		}
 	}
-	
+
 	// Add final parameter
 	if start < len(p.oscRaw) {
 		params = append(params, p.oscRaw[start:])
 	}
-	
+
 	performer.OscDispatch(params, bellTerminated)
 	p.resetParams()
 }
@@ -697,7 +698,7 @@ func (p *Parser) handleUTF8(performer Performer, bytes []byte) int {
 	if len(bytes) == 0 {
 		return 0
 	}
-	
+
 	r, size := utf8.DecodeRune(bytes)
 	if r == utf8.RuneError {
 		// Incomplete UTF-8, save for next call
@@ -711,7 +712,7 @@ func (p *Parser) handleUTF8(performer Performer, bytes []byte) int {
 		performer.Print(utf8.RuneError)
 		return 1
 	}
-	
+
 	performer.Print(r)
 	return size
 }
@@ -721,7 +722,7 @@ func (p *Parser) advancePartialUTF8(performer Performer, bytes []byte) int {
 	if len(bytes) == 0 {
 		return 0
 	}
-	
+
 	// Check if the first byte is a control character that should interrupt UTF-8
 	if bytes[0] < 0x20 || bytes[0] == 0x7F || bytes[0] == 0x1B {
 		// Control character interrupts partial UTF-8
@@ -730,12 +731,12 @@ func (p *Parser) advancePartialUTF8(performer Performer, bytes []byte) int {
 		p.partialUTF8Len = 0
 		return 0 // Don't consume the control character
 	}
-	
+
 	// Try to complete the partial UTF-8
 	needed := utf8.UTFMax - p.partialUTF8Len
 	n := min(needed, len(bytes))
 	copy(p.partialUTF8[p.partialUTF8Len:], bytes[:n])
-	
+
 	r, size := utf8.DecodeRune(p.partialUTF8[:p.partialUTF8Len+n])
 	if r != utf8.RuneError {
 		// Successfully decoded a character
@@ -745,13 +746,13 @@ func (p *Parser) advancePartialUTF8(performer Performer, bytes []byte) int {
 		p.partialUTF8Len = 0
 		return bytesFromInput
 	}
-	
+
 	if size == 1 && !utf8.FullRune(p.partialUTF8[:p.partialUTF8Len+n]) {
 		// Still incomplete
 		p.partialUTF8Len += n
 		return n
 	}
-	
+
 	// Invalid UTF-8, print replacement character and reset
 	performer.Print(utf8.RuneError)
 	p.partialUTF8Len = 0

@@ -27,7 +27,7 @@ func NewTerminalBuffer(width, height int) *TerminalBuffer {
 			buffer[i][j] = ' '
 		}
 	}
-	
+
 	return &TerminalBuffer{
 		buffer:    buffer,
 		cursorRow: 0,
@@ -70,7 +70,7 @@ func (t *TerminalBuffer) Print(c rune) {
 	if t.cursorRow < t.height && t.cursorCol < t.width {
 		t.buffer[t.cursorRow][t.cursorCol] = c
 		t.cursorCol++
-		
+
 		// Auto line wrap
 		if t.cursorCol >= t.width {
 			t.cursorCol = 0
@@ -118,7 +118,7 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 	if ignore {
 		return
 	}
-	
+
 	// Convert Params to []uint16 slice for processing
 	var paramsVec []uint16
 	if params != nil {
@@ -129,19 +129,19 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 			}
 		}
 	}
-	
+
 	switch action {
 	case 'H', 'f': // CUP - Cursor Position
 		row := 1
 		col := 1
-		
+
 		if len(paramsVec) > 0 && paramsVec[0] > 0 {
 			row = int(paramsVec[0])
 		}
 		if len(paramsVec) > 1 && paramsVec[1] > 0 {
 			col = int(paramsVec[1])
 		}
-		
+
 		// Convert to 0-based index and limit to valid range
 		t.cursorRow = min(row-1, t.height-1)
 		t.cursorCol = min(col-1, t.width-1)
@@ -151,7 +151,7 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 		if t.cursorCol < 0 {
 			t.cursorCol = 0
 		}
-		
+
 	case 'J': // ED - Erase Display
 		if len(paramsVec) == 0 || paramsVec[0] == 0 {
 			// Clear from cursor to end of screen
@@ -185,7 +185,7 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 			t.cursorRow = 0
 			t.cursorCol = 0
 		}
-		
+
 	case 'K': // EL - Erase Line
 		if t.cursorRow < t.height {
 			if len(paramsVec) == 0 || paramsVec[0] == 0 {
@@ -205,28 +205,28 @@ func (t *TerminalBuffer) CsiDispatch(params *govte.Params, intermediates []byte,
 				}
 			}
 		}
-		
+
 	case 'A': // CUU - Cursor Up
 		lines := 1
 		if len(paramsVec) > 0 && paramsVec[0] > 0 {
 			lines = int(paramsVec[0])
 		}
 		t.cursorRow = max(0, t.cursorRow-lines)
-		
-	case 'B': // CUD - Cursor Down  
+
+	case 'B': // CUD - Cursor Down
 		lines := 1
 		if len(paramsVec) > 0 && paramsVec[0] > 0 {
 			lines = int(paramsVec[0])
 		}
 		t.cursorRow = min(t.height-1, t.cursorRow+lines)
-		
+
 	case 'C': // CUF - Cursor Forward
 		cols := 1
 		if len(paramsVec) > 0 && paramsVec[0] > 0 {
 			cols = int(paramsVec[0])
 		}
 		t.cursorCol = min(t.width-1, t.cursorCol+cols)
-		
+
 	case 'D': // CUB - Cursor Back
 		cols := 1
 		if len(paramsVec) > 0 && paramsVec[0] > 0 {

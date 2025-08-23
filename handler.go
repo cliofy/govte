@@ -6,7 +6,7 @@ package govte
 // abstracting away the low-level escape sequence details.
 type Handler interface {
 	// Text and Display
-	
+
 	// Input handles a character to be displayed.
 	Input(c rune)
 
@@ -41,7 +41,7 @@ type Handler interface {
 	SetTitle(title string)
 
 	// Cursor Movement
-	
+
 	// Goto moves cursor to absolute position (1-based).
 	Goto(line, col int)
 
@@ -76,7 +76,7 @@ type Handler interface {
 	RestoreCursorPosition()
 
 	// Text Modification
-	
+
 	// InsertBlank inserts n blank characters at cursor.
 	InsertBlank(count int)
 
@@ -93,7 +93,7 @@ type Handler interface {
 	DeleteLines(count int)
 
 	// Screen Operations
-	
+
 	// ClearLine clears line according to mode.
 	ClearLine(mode LineClearMode)
 
@@ -110,7 +110,7 @@ type Handler interface {
 	SetScrollingRegion(top, bottom int)
 
 	// Text Attributes
-	
+
 	// SetAttribute sets text rendering attribute.
 	SetAttribute(attr Attr)
 
@@ -127,7 +127,7 @@ type Handler interface {
 	ResetColors()
 
 	// Cursor Appearance
-	
+
 	// SetCursorStyle sets cursor appearance.
 	SetCursorStyle(style CursorStyle)
 
@@ -135,7 +135,7 @@ type Handler interface {
 	SetCursorVisible(visible bool)
 
 	// Terminal Modes
-	
+
 	// SetMode enables a terminal mode.
 	SetMode(mode Mode)
 
@@ -143,7 +143,7 @@ type Handler interface {
 	ResetMode(mode Mode)
 
 	// Device Operations
-	
+
 	// DeviceStatus reports device status.
 	DeviceStatus(kind int)
 

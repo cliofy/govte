@@ -12,7 +12,7 @@ import (
 // It inherits from NoopHandler and overrides necessary methods to support progress bar rendering
 type ProgressHandler struct {
 	govte.NoopHandler
-	output strings.Builder
+	output      strings.Builder
 	currentLine strings.Builder
 }
 
@@ -124,7 +124,7 @@ func (h *ProgressHandler) PrintLineDirect(text string) {
 func (h *ProgressHandler) RenderSimpleBar(progress, width int) string {
 	filled := (progress * width) / 100
 	empty := width - filled
-	
+
 	bar := "[" + strings.Repeat("=", filled) + strings.Repeat(" ", empty) + "]"
 	return fmt.Sprintf("%s %d%%", bar, progress)
 }
@@ -133,31 +133,31 @@ func (h *ProgressHandler) RenderSimpleBar(progress, width int) string {
 func (h *ProgressHandler) RenderUnicodeBar(progress, width int) string {
 	filled := (progress * width) / 100
 	empty := width - filled
-	
+
 	var bar strings.Builder
 	bar.WriteString("[")
-	
+
 	// Completed portion
 	bar.WriteString(strings.Repeat("█", filled))
-	
+
 	// Partially complete character (if there's a remainder)
 	remainder := (progress * width) % 100
 	if remainder > 0 && filled < width {
 		bar.WriteString("▓")
 		empty--
 	}
-	
+
 	// Incomplete portion
 	bar.WriteString(strings.Repeat("░", empty))
 	bar.WriteString("]")
-	
+
 	return fmt.Sprintf("%s %d%%", bar.String(), progress)
 }
 
 // RenderColoredBar renders colored progress bar
 func (h *ProgressHandler) RenderColoredBar(progress, width int) string {
 	filled := (progress * width) / 100
-	
+
 	// Choose color based on progress
 	var colorCode string
 	if progress < 33 {
@@ -167,10 +167,10 @@ func (h *ProgressHandler) RenderColoredBar(progress, width int) string {
 	} else {
 		colorCode = "\x1b[32m" // Green
 	}
-	
+
 	var bar strings.Builder
 	bar.WriteString("Progress: [")
-	
+
 	for i := 0; i < width; i++ {
 		if i < filled {
 			bar.WriteString("=")
@@ -180,9 +180,9 @@ func (h *ProgressHandler) RenderColoredBar(progress, width int) string {
 			bar.WriteString(" ")
 		}
 	}
-	
+
 	bar.WriteString("]")
-	
+
 	return fmt.Sprintf("%s%s %d%%\x1b[0m", colorCode, bar.String(), progress)
 }
 

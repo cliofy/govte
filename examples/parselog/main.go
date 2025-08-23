@@ -69,18 +69,18 @@ func main() {
 
 	parser := govte.NewParser()
 	performer := &LogPerformer{}
-	
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		input := scanner.Bytes()
 		fmt.Printf("Input: %q\n", input)
-		
+
 		// Parse the input using VTE parser
 		parser.Advance(performer, input)
-		
+
 		fmt.Println()
 	}
-	
+
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
 	}

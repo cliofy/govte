@@ -1,5 +1,5 @@
 //! GoVTE Animated Terminal Demo
-//! 
+//!
 //! Demonstrates how to combine GoVTE with real-time updates to create various terminal animation effects
 //! This is a Go implementation of the Rust version vte_animation.rs
 
@@ -17,16 +17,16 @@ func main() {
 		fmt.Println("Warning: Terminal may not fully support required features, display may be abnormal")
 		time.Sleep(2 * time.Second)
 	}
-	
+
 	// Enter alternate screen buffer, hide cursor, and clear screen
 	EnterAlternateScreen()
-	
+
 	// Ensure terminal state is restored on exit
 	defer func() {
 		ExitAlternateScreen()
 		fmt.Println("Thank you for using the GoVTE animation demo!")
 	}()
-	
+
 	// Display title in alternate screen
 	fmt.Print("\x1b[1;1H=== VTE Animated Terminal Demo (GoVTE) ===")
 	fmt.Print("\x1b[2;1HImplementing various terminal animation effects using GoVTE parser")
@@ -41,17 +41,17 @@ func main() {
 	fmt.Print("\x1b[13;1HPress Ctrl+C to exit at any time")
 	fmt.Print("\x1b[15;1HStarting demo...")
 	os.Stdout.Sync()
-	
+
 	// Start countdown
 	for i := 3; i > 0; i-- {
 		fmt.Printf("\x1b[15;15HCountdown: %d", i)
 		os.Stdout.Sync()
 		time.Sleep(1 * time.Second)
 	}
-	
+
 	// Run each demo
 	runAllDemos()
-	
+
 	// Display completion message
 	fmt.Print("\x1b[H\x1b[2J")
 	fmt.Print("\x1b[10;20H✨ All demos completed!")
@@ -79,14 +79,14 @@ func runAllDemos() {
 		{"Spiral Animation", DemoSpiralAnimation},
 		{"Fireworks Animation", DemoFireworks},
 	}
-	
+
 	for i, demo := range demos {
 		// Display current demo information
 		showDemoTransition(i+1, len(demos), demo.name)
-		
+
 		// Run the demo
 		demo.fn()
-		
+
 		// Interval between demos
 		if i < len(demos)-1 {
 			showTransitionMessage("Preparing next demo...")
@@ -119,13 +119,13 @@ func checkTerminalSupport() bool {
 	if term == "" {
 		return false
 	}
-	
+
 	// Check if colors are supported
 	colorTerm := os.Getenv("COLORTERM")
 	if colorTerm == "" && term != "xterm-256color" && term != "screen-256color" {
 		return false
 	}
-	
+
 	return true
 }
 

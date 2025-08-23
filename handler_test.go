@@ -9,7 +9,7 @@ import (
 // TestHandler implementation for testing
 type TestHandler struct {
 	NoopHandler
-	
+
 	// Track method calls
 	inputChars       []rune
 	bellCount        int
@@ -88,7 +88,7 @@ func (h *TestHandler) ResetMode(mode Mode) {
 
 func TestNoopHandler(t *testing.T) {
 	h := &NoopHandler{}
-	
+
 	// Test that all methods can be called without panicking
 	h.Input('a')
 	h.Bell()
@@ -131,7 +131,7 @@ func TestNoopHandler(t *testing.T) {
 	h.IdentifyTerminal()
 	h.Reset()
 	h.HardReset()
-	
+
 	// If we got here without panicking, test passes
 	assert.True(t, true)
 }
@@ -139,7 +139,7 @@ func TestNoopHandler(t *testing.T) {
 func TestHandlerInterface(t *testing.T) {
 	// Ensure NoopHandler implements Handler
 	var _ Handler = (*NoopHandler)(nil)
-	
+
 	// Ensure TestHandler implements Handler
 	var _ Handler = (*TestHandler)(nil)
 }

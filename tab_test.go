@@ -82,14 +82,14 @@ func (h *TabHandler) nextTabStop(col int) int {
 		// Default tab stops every 8 columns
 		return ((col / 8) + 1) * 8
 	}
-	
+
 	// Find next set tab stop
 	for i := col + 1; i <= 120; i++ { // Reasonable terminal width limit
 		if h.tabStops[i] {
 			return i
 		}
 	}
-	
+
 	// If no custom tab stops found, use default
 	return ((col / 8) + 1) * 8
 }
@@ -99,7 +99,7 @@ func (h *TabHandler) prevTabStop(col int) int {
 	if col <= 1 {
 		return 1
 	}
-	
+
 	if h.tabStops == nil {
 		// Default tab stops every 8 columns
 		prevStop := ((col - 1) / 8) * 8
@@ -108,14 +108,14 @@ func (h *TabHandler) prevTabStop(col int) int {
 		}
 		return prevStop
 	}
-	
+
 	// Find previous set tab stop
 	for i := col - 1; i >= 1; i-- {
 		if h.tabStops[i] {
 			return i
 		}
 	}
-	
+
 	return 1
 }
 
@@ -170,11 +170,11 @@ func TestTabStopClearing(t *testing.T) {
 	}
 
 	tests := []struct {
-		name            string
-		sequence        string
-		expectedType    string
-		expectedColumn  int
-		remainingStops  map[int]bool
+		name           string
+		sequence       string
+		expectedType   string
+		expectedColumn int
+		remainingStops map[int]bool
 	}{
 		{
 			name:           "Clear current tab stop",
@@ -197,7 +197,7 @@ func TestTabStopClearing(t *testing.T) {
 			// Reset handler state
 			handler.tabOperations = nil
 			handler.tabStops = map[int]bool{5: true, 10: true, 15: true}
-			
+
 			processor.Advance(handler, []byte(tt.sequence))
 
 			assert.Len(t, handler.tabOperations, 1)
@@ -213,11 +213,11 @@ func TestCursorHorizontalTab(t *testing.T) {
 	handler := &TabHandler{cursorCol: 1}
 
 	tests := []struct {
-		name           string
-		sequence       string
-		expectedType   string
-		expectedCount  int
-		expectedCol    int
+		name          string
+		sequence      string
+		expectedType  string
+		expectedCount int
+		expectedCol   int
 	}{
 		{
 			name:          "CHT with default parameter (1)",
@@ -239,7 +239,7 @@ func TestCursorHorizontalTab(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			handler.tabOperations = nil
 			handler.cursorCol = 1
-			
+
 			processor.Advance(handler, []byte(tt.sequence))
 
 			assert.Len(t, handler.tabOperations, 1)
@@ -255,11 +255,11 @@ func TestCursorBackwardTab(t *testing.T) {
 	handler := &TabHandler{cursorCol: 25}
 
 	tests := []struct {
-		name           string
-		sequence       string
-		expectedType   string
-		expectedCount  int
-		expectedCol    int
+		name          string
+		sequence      string
+		expectedType  string
+		expectedCount int
+		expectedCol   int
 	}{
 		{
 			name:          "CBT with default parameter (1)",
@@ -281,7 +281,7 @@ func TestCursorBackwardTab(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			handler.tabOperations = nil
 			handler.cursorCol = 25
-			
+
 			processor.Advance(handler, []byte(tt.sequence))
 
 			assert.Len(t, handler.tabOperations, 1)
@@ -299,10 +299,10 @@ func TestCustomTabStops(t *testing.T) {
 	// Set custom tab stops at columns 5, 12, 20
 	handler.cursorCol = 5
 	processor.Advance(handler, []byte("\x1bH"))
-	
+
 	handler.cursorCol = 12
 	processor.Advance(handler, []byte("\x1bH"))
-	
+
 	handler.cursorCol = 20
 	processor.Advance(handler, []byte("\x1bH"))
 
@@ -328,18 +328,18 @@ func TestTabIntegration(t *testing.T) {
 	handler := &TabHandler{cursorCol: 1}
 
 	// Complete scenario: set custom tab stops, move, and clear
-	
+
 	// Set tab stops at columns 10 and 20
 	handler.cursorCol = 10
 	processor.Advance(handler, []byte("\x1bH"))
-	
+
 	handler.cursorCol = 20
 	processor.Advance(handler, []byte("\x1bH"))
 
 	// Move to start and tab forward
 	handler.cursorCol = 1
 	handler.tabOperations = nil
-	
+
 	// Use CHT to move forward 2 tab stops (should go to column 20)
 	processor.Advance(handler, []byte("\x1b[2I"))
 	assert.Equal(t, 20, handler.cursorCol)

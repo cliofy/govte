@@ -31,11 +31,11 @@ func DefaultTerminal() *TerminalBuffer {
 func ParseBytes(bytes []byte, width, height int) string {
 	parser := govte.NewParser()
 	terminal := NewTerminalBuffer(width, height)
-	
+
 	for _, b := range bytes {
 		parser.Advance(terminal, []byte{b})
 	}
-	
+
 	return terminal.GetDisplay()
 }
 
@@ -43,11 +43,11 @@ func ParseBytes(bytes []byte, width, height int) string {
 func ParseBytesWithColors(bytes []byte, width, height int) string {
 	parser := govte.NewParser()
 	terminal := NewTerminalBuffer(width, height)
-	
+
 	for _, b := range bytes {
 		parser.Advance(terminal, []byte{b})
 	}
-	
+
 	return terminal.GetDisplayWithColors()
 }
 
@@ -55,12 +55,12 @@ func ParseBytesWithColors(bytes []byte, width, height int) string {
 func CreateTerminalFromString(input string, width, height int) *TerminalBuffer {
 	parser := govte.NewParser()
 	terminal := NewTerminalBuffer(width, height)
-	
+
 	bytes := []byte(input)
 	for _, b := range bytes {
 		parser.Advance(terminal, []byte{b})
 	}
-	
+
 	return terminal
 }
 

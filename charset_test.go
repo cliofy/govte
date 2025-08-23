@@ -9,10 +9,10 @@ import (
 // CharsetHandler is a test handler that tracks charset operations
 type CharsetHandler struct {
 	NoopHandler
-	charsetConfigs    []CharsetConfig
-	activeCharset     CharsetIndex
+	charsetConfigs     []CharsetConfig
+	activeCharset      CharsetIndex
 	charsetActivations []CharsetIndex
-	transformedChars  []rune
+	transformedChars   []rune
 }
 
 // CharsetConfig captures charset configuration calls
@@ -65,7 +65,7 @@ func TestStandardCharsetEnum(t *testing.T) {
 		charset  StandardCharset
 		expected string
 	}{
-		{"ASCII charset", StandardCharsetAscii, "Ascii"},
+		{"ASCII charset", StandardCharsetASCII, "ASCII"},
 		{"Special character and line drawing", StandardCharsetSpecialLineDrawing, "SpecialCharacterAndLineDrawing"},
 	}
 
@@ -90,25 +90,25 @@ func TestCharsetConfiguration(t *testing.T) {
 			name:            "Configure G0 to ASCII",
 			sequence:        "\x1b(B",
 			expectedIndex:   G0,
-			expectedCharset: StandardCharsetAscii,
+			expectedCharset: StandardCharsetASCII,
 		},
 		{
 			name:            "Configure G1 to ASCII",
 			sequence:        "\x1b)B",
 			expectedIndex:   G1,
-			expectedCharset: StandardCharsetAscii,
+			expectedCharset: StandardCharsetASCII,
 		},
 		{
 			name:            "Configure G2 to ASCII",
 			sequence:        "\x1b*B",
 			expectedIndex:   G2,
-			expectedCharset: StandardCharsetAscii,
+			expectedCharset: StandardCharsetASCII,
 		},
 		{
 			name:            "Configure G3 to ASCII",
 			sequence:        "\x1b+B",
 			expectedIndex:   G3,
-			expectedCharset: StandardCharsetAscii,
+			expectedCharset: StandardCharsetASCII,
 		},
 		{
 			name:            "Configure G0 to special drawing",
@@ -220,7 +220,7 @@ func TestAsciiCharacterMapping(t *testing.T) {
 
 	for _, char := range tests {
 		t.Run(string(char), func(t *testing.T) {
-			result := StandardCharsetAscii.Map(char)
+			result := StandardCharsetASCII.Map(char)
 			assert.Equal(t, char, result, "ASCII charset should not transform characters")
 		})
 	}
@@ -247,7 +247,7 @@ func TestCharsetIntegration(t *testing.T) {
 
 	// Expected transformations for special line drawing charset:
 	expected := []rune{'─', '┘', '┐', '┌', '└', '┼', '│'}
-	
+
 	// Note: This test assumes the processor applies charset transformations.
 	// The actual implementation might need to be updated to support this.
 	for i := range expected {
@@ -270,7 +270,7 @@ func TestMultipleCharsetSwitching(t *testing.T) {
 	// Verify configurations
 	assert.Len(t, handler.charsetConfigs, 2)
 	assert.Equal(t, G0, handler.charsetConfigs[0].Index)
-	assert.Equal(t, StandardCharsetAscii, handler.charsetConfigs[0].Charset)
+	assert.Equal(t, StandardCharsetASCII, handler.charsetConfigs[0].Charset)
 	assert.Equal(t, G1, handler.charsetConfigs[1].Index)
 	assert.Equal(t, StandardCharsetSpecialLineDrawing, handler.charsetConfigs[1].Charset)
 
@@ -293,7 +293,7 @@ func TestCharsetReset(t *testing.T) {
 
 	// Configure non-default charset
 	processor.Advance(handler, []byte("\x1b(0")) // G0 = Special line drawing
-	processor.Advance(handler, []byte("\x0E"))    // Activate G1
+	processor.Advance(handler, []byte("\x0E"))   // Activate G1
 
 	// Perform reset
 	processor.Reset()

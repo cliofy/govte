@@ -18,27 +18,27 @@ func TestProcessorCreation(t *testing.T) {
 func TestProcessorBasicText(t *testing.T) {
 	p := NewProcessor(&NoopHandler{})
 	h := NewTestHandler()
-	
+
 	p.Advance(h, []byte("Hello"))
-	
+
 	assert.Equal(t, []rune{'H', 'e', 'l', 'l', 'o'}, h.inputChars)
 }
 
 func TestProcessorControlCharacters(t *testing.T) {
 	p := NewProcessor(&NoopHandler{})
 	h := NewTestHandler()
-	
+
 	// Test various control characters
-	p.Advance(h, []byte("\x07"))  // BEL
+	p.Advance(h, []byte("\x07")) // BEL
 	assert.Equal(t, 1, h.bellCount)
-	
-	p.Advance(h, []byte("\x08"))  // BS
+
+	p.Advance(h, []byte("\x08")) // BS
 	// Backspace doesn't have a test handler method, but it shouldn't panic
-	
-	p.Advance(h, []byte("\x0A"))  // LF
+
+	p.Advance(h, []byte("\x0A")) // LF
 	assert.Equal(t, 1, h.lineFeedCount)
-	
-	p.Advance(h, []byte("\x0D"))  // CR
+
+	p.Advance(h, []byte("\x0D")) // CR
 	assert.Equal(t, 1, h.carriageReturns)
 }
 
@@ -72,12 +72,12 @@ func TestProcessorCursorMovement(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := NewProcessor(&NoopHandler{})
 			h := NewTestHandler()
-			
+
 			p.Advance(h, []byte(tt.sequence))
 			tt.checkFn(t, h)
 		})
@@ -138,12 +138,12 @@ func TestProcessorColors(t *testing.T) {
 			},
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := NewProcessor(&NoopHandler{})
 			h := NewTestHandler()
-			
+
 			p.Advance(h, []byte(tt.sequence))
 			tt.checkFn(t, h)
 		})
@@ -161,12 +161,12 @@ func TestProcessorAttributes(t *testing.T) {
 		{"Underline", "\x1b[4m", []Attr{AttrUnderline}},
 		{"Multiple", "\x1b[1;3;4m", []Attr{AttrBold, AttrItalic, AttrUnderline}},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := NewProcessor(&NoopHandler{})
 			h := NewTestHandler()
-			
+
 			p.Advance(h, []byte(tt.sequence))
 			assert.Equal(t, tt.expected, h.attributes)
 		})
@@ -211,14 +211,14 @@ func TestProcessorClearOperations(t *testing.T) {
 			expectedScreen: []ClearMode{ClearAll},
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := NewProcessor(&NoopHandler{})
 			h := NewTestHandler()
-			
+
 			p.Advance(h, []byte(tt.sequence))
-			
+
 			if tt.expectedLines != nil {
 				assert.Equal(t, tt.expectedLines, h.clearedLines)
 			}
@@ -261,14 +261,14 @@ func TestProcessorModes(t *testing.T) {
 			enabled:  false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := NewProcessor(&NoopHandler{})
 			h := NewTestHandler()
-			
+
 			p.Advance(h, []byte(tt.sequence))
-			
+
 			val, exists := h.modes[tt.mode]
 			assert.True(t, exists)
 			assert.Equal(t, tt.enabled, val)
@@ -293,12 +293,12 @@ func TestProcessorOSC(t *testing.T) {
 			expectedTitle: "Another Title",
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := NewProcessor(&NoopHandler{})
 			h := NewTestHandler()
-			
+
 			p.Advance(h, []byte(tt.sequence))
 			assert.Equal(t, tt.expectedTitle, h.title)
 		})
@@ -307,13 +307,13 @@ func TestProcessorOSC(t *testing.T) {
 
 func TestProcessorReset(t *testing.T) {
 	p := NewProcessor(&NoopHandler{})
-	
+
 	// Modify some state
 	p.Advance(&NoopHandler{}, []byte("Test"))
-	
+
 	// Reset
 	p.Reset()
-	
+
 	assert.NotNil(t, p.parser)
 	assert.False(t, p.syncState.enabled)
 	assert.Empty(t, p.syncState.buffer)
@@ -321,7 +321,7 @@ func TestProcessorReset(t *testing.T) {
 
 func TestProcessorSyncTimeout(t *testing.T) {
 	p := NewProcessor(&NoopHandler{})
-	
+
 	// Set custom timeout
 	p.SetSyncTimeout(200 * time.Millisecond)
 	assert.Equal(t, 200*time.Millisecond, p.syncState.timeout)
@@ -333,24 +333,24 @@ func TestGetParam(t *testing.T) {
 		{4},
 		{5, 6},
 	}
-	
+
 	tests := []struct {
 		groupIdx     int
 		paramIdx     int
 		defaultValue int
 		expected     int
 	}{
-		{0, 0, 10, 1},   // First param of first group
-		{0, 1, 10, 2},   // Second param of first group
-		{0, 2, 10, 3},   // Third param of first group
-		{1, 0, 10, 4},   // First param of second group
-		{2, 1, 10, 6},   // Second param of third group
-		{3, 0, 10, 10},  // Out of bounds group - use default
-		{0, 5, 10, 10},  // Out of bounds param - use default
-		{0, 0, 0, 1},    // Default is 0, value is non-zero
-		{1, 1, 20, 20},  // Param doesn't exist - use default
+		{0, 0, 10, 1},  // First param of first group
+		{0, 1, 10, 2},  // Second param of first group
+		{0, 2, 10, 3},  // Third param of first group
+		{1, 0, 10, 4},  // First param of second group
+		{2, 1, 10, 6},  // Second param of third group
+		{3, 0, 10, 10}, // Out of bounds group - use default
+		{0, 5, 10, 10}, // Out of bounds param - use default
+		{0, 0, 0, 1},   // Default is 0, value is non-zero
+		{1, 1, 20, 20}, // Param doesn't exist - use default
 	}
-	
+
 	for _, tt := range tests {
 		result := getParam(groups, tt.groupIdx, tt.paramIdx, tt.defaultValue)
 		assert.Equal(t, tt.expected, result)

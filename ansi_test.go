@@ -47,7 +47,7 @@ func TestRgb(t *testing.T) {
 	t.Run("Contrast", func(t *testing.T) {
 		white := NewRgb(255, 255, 255)
 		black := NewRgb(0, 0, 0)
-		
+
 		// Maximum contrast is 21:1 (white on black)
 		contrast := white.Contrast(black)
 		assert.InDelta(t, 21.0, contrast, 0.1)
@@ -218,7 +218,7 @@ func TestCursorStyle(t *testing.T) {
 	t.Run("CursorShape", func(t *testing.T) {
 		shapes := []CursorShape{CursorShapeBlock, CursorShapeUnderline, CursorShapeBeam}
 		assert.Equal(t, 3, len(shapes))
-		
+
 		// Ensure values are distinct
 		assert.NotEqual(t, CursorShapeBlock, CursorShapeUnderline)
 		assert.NotEqual(t, CursorShapeUnderline, CursorShapeBeam)
@@ -256,7 +256,7 @@ func TestCharsets(t *testing.T) {
 	t.Run("CharsetIndex", func(t *testing.T) {
 		indices := []CharsetIndex{G0, G1, G2, G3}
 		assert.Equal(t, 4, len(indices))
-		
+
 		// Ensure sequential values
 		assert.Equal(t, CharsetIndex(0), G0)
 		assert.Equal(t, CharsetIndex(1), G1)
@@ -265,7 +265,7 @@ func TestCharsets(t *testing.T) {
 	})
 
 	t.Run("StandardCharset", func(t *testing.T) {
-		charsets := []StandardCharset{StandardCharsetAscii, StandardCharsetSpecialLineDrawing}
+		charsets := []StandardCharset{StandardCharsetASCII, StandardCharsetSpecialLineDrawing}
 		assert.Equal(t, 2, len(charsets))
 	})
 }
@@ -402,7 +402,7 @@ func TestRgbEdgeCases(t *testing.T) {
 	t.Run("Contrast Symmetry", func(t *testing.T) {
 		c1 := NewRgb(100, 150, 200)
 		c2 := NewRgb(200, 100, 50)
-		
+
 		// Contrast should be symmetric
 		assert.InDelta(t, c1.Contrast(c2), c2.Contrast(c1), 0.001)
 	})
@@ -436,14 +436,14 @@ func TestSynchronizedUpdates(t *testing.T) {
 		expected := "[?2026h"
 		assert.Equal(t, expected, bsu)
 	})
-	
+
 	t.Run("EndSynchronizedUpdate", func(t *testing.T) {
 		// Test ESU (End Synchronized Update) sequence generation
 		esu := EndSynchronizedUpdate()
 		expected := "[?2026l"
 		assert.Equal(t, expected, esu)
 	})
-	
+
 	t.Run("SynchronizedBlock", func(t *testing.T) {
 		// Test wrapping content in synchronized update block
 		content := "Hello, World!"
@@ -459,23 +459,23 @@ func TestTerminalSequences(t *testing.T) {
 		expected := "[2J"
 		assert.Equal(t, expected, seq)
 	})
-	
+
 	t.Run("ClearLine", func(t *testing.T) {
 		seq := ClearLine()
 		expected := "[K"
 		assert.Equal(t, expected, seq)
 	})
-	
+
 	t.Run("MoveCursor", func(t *testing.T) {
 		seq := MoveTo(5, 10)
 		expected := "[6;11H" // 1-indexed
 		assert.Equal(t, expected, seq)
 	})
-	
+
 	t.Run("SaveRestoreCursor", func(t *testing.T) {
 		save := SaveCursor()
 		restore := RestoreCursor()
-		assert.Equal(t, "7", save)   // DECSC
+		assert.Equal(t, "7", save)    // DECSC
 		assert.Equal(t, "8", restore) // DECRC
 	})
 }
@@ -484,60 +484,60 @@ func TestProcessorAdvanced(t *testing.T) {
 	t.Run("StateTracking", func(t *testing.T) {
 		// Test processor state tracking and mode management
 		processor := NewProcessor(&NoopHandler{})
-		
+
 		// Test synchronized update tracking
 		processor.BeginSynchronizedUpdate()
 		assert.True(t, processor.IsInSynchronizedUpdate())
-		
+
 		processor.EndSynchronizedUpdate()
 		assert.False(t, processor.IsInSynchronizedUpdate())
 	})
-	
+
 	t.Run("ModeStack", func(t *testing.T) {
 		// Test mode stack management
 		processor := NewProcessor(&NoopHandler{})
-		
+
 		// Push application cursor mode
 		processor.SetMode(ModeApplicationCursor, true)
 		assert.True(t, processor.IsMode(ModeApplicationCursor))
-		
+
 		// Push another mode
 		processor.SetMode(ModeAlternateScreen, true)
 		assert.True(t, processor.IsMode(ModeAlternateScreen))
 		assert.True(t, processor.IsMode(ModeApplicationCursor))
-		
+
 		// Pop modes
 		processor.SetMode(ModeAlternateScreen, false)
 		assert.False(t, processor.IsMode(ModeAlternateScreen))
 		assert.True(t, processor.IsMode(ModeApplicationCursor))
 	})
-	
+
 	t.Run("BufferedOutput", func(t *testing.T) {
 		// Test buffered output for synchronized updates
 		buffer := &TestBuffer{}
 		processor := NewProcessorWithBuffer(buffer, &NoopHandler{})
-		
+
 		processor.BeginSynchronizedUpdate()
 		processor.Write("Hello")
 		processor.Write(" World")
-		
+
 		// Should be buffered, not written yet
 		assert.Equal(t, "", buffer.String())
-		
+
 		processor.EndSynchronizedUpdate()
 		// Now should be flushed
 		assert.Equal(t, "Hello World", buffer.String())
 	})
-	
+
 	t.Run("ErrorRecovery", func(t *testing.T) {
 		// Test processor error recovery
 		processor := NewProcessor(&NoopHandler{})
-		
+
 		// Should handle malformed sequences gracefully
 		processor.Process([]byte("[99999999999999999999m"))
 		processor.Process([]byte("[invalid"))
 		processor.Process([]byte("normal text"))
-		
+
 		// Should still be functional
 		assert.NotNil(t, processor)
 	})
@@ -562,27 +562,27 @@ func TestProcessorIntegration(t *testing.T) {
 		// Test processing a complex ANSI sequence
 		handler := &MockHandler{}
 		processor := NewProcessor(handler)
-		
+
 		// SGR sequence with multiple parameters
 		sequence := "[1;31;4m"
 		processor.Process([]byte(sequence))
-		
+
 		// Should have called CsiDispatch with correct parameters
 		assert.True(t, handler.csiCalled)
 		assert.Equal(t, byte('m'), handler.action)
 	})
-	
+
 	t.Run("StreamProcessing", func(t *testing.T) {
 		// Test streaming byte processing
 		handler := &MockHandler{}
 		processor := NewProcessor(handler)
-		
+
 		// Process sequence in chunks
 		chunks := []string{"\x1b[31m", "Hello"}
 		for _, chunk := range chunks {
 			processor.Process([]byte(chunk))
 		}
-		
+
 		// Should correctly assemble and process the sequence
 		assert.True(t, handler.csiCalled)
 		assert.True(t, handler.printCalled)

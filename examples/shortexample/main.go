@@ -15,7 +15,7 @@ func main() {
 	fmt.Println("1. Basic text parsing:")
 	parser := govte.NewParser()
 	term := terminal.NewTerminalBuffer(80, 24)
-	
+
 	input := []byte("Hello, GoVTE!")
 	for _, b := range input {
 		parser.Advance(term, []byte{b})
@@ -33,7 +33,7 @@ func main() {
 	fmt.Println("3. Cursor movement and overwriting:")
 	term2 := terminal.NewTerminalBuffer(80, 24)
 	parser2 := govte.NewParser()
-	
+
 	// Write "Hello", move cursor back, overwrite with "World"
 	sequence := []byte("Hello\r     \rWorld")
 	for _, b := range sequence {
@@ -60,13 +60,13 @@ func main() {
 	fmt.Println("6. Custom Performer implementation:")
 	customParser := govte.NewParser()
 	counter := &CharCounter{}
-	
+
 	testInput := []byte("Count\nthese\nlines!")
 	for _, b := range testInput {
 		customParser.Advance(counter, []byte{b})
 	}
 	fmt.Printf("   Input: %q\n", testInput)
-	fmt.Printf("   Stats: %d characters, %d control codes\n", 
+	fmt.Printf("   Stats: %d characters, %d control codes\n",
 		counter.charCount, counter.controlCount)
 }
 

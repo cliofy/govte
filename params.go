@@ -12,13 +12,13 @@ const MaxParams = 32
 type Params struct {
 	// subparams stores the number of subparameters for each parameter
 	subparams [MaxParams]uint8
-	
+
 	// params stores all parameters and subparameters
 	params [MaxParams]uint16
-	
+
 	// currentSubparams tracks the number of subparameters in the current parameter
 	currentSubparams uint8
-	
+
 	// len is the total number of parameters and subparameters
 	len int
 }
@@ -61,10 +61,10 @@ func (p *Params) Push(value uint16) {
 	if p.IsFull() {
 		return
 	}
-	
+
 	// Store the parameter
 	p.params[p.len] = value
-	p.subparams[p.len] = 1  // This parameter group starts with 1 element (the main param)
+	p.subparams[p.len] = 1 // This parameter group starts with 1 element (the main param)
 	p.currentSubparams = 0
 	p.len++
 }
@@ -74,30 +74,30 @@ func (p *Params) Extend(value uint16) {
 	if p.IsFull() {
 		return
 	}
-	
+
 	if p.len == 0 {
 		// No parameter to extend, treat as Push
 		p.Push(value)
 		return
 	}
-	
+
 	// Find the start of the current parameter group
 	// We need to find the last non-zero entry in subparams
 	groupStart := p.len - 1
 	for groupStart >= 0 && p.subparams[groupStart] == 0 {
 		groupStart--
 	}
-	
+
 	if groupStart < 0 {
 		// No valid group found, treat as Push
 		p.Push(value)
 		return
 	}
-	
+
 	// Store the subparameter
 	p.params[p.len] = value
-	p.subparams[p.len] = 0  // Mark this as a subparameter (not a group start)
-	
+	p.subparams[p.len] = 0 // Mark this as a subparameter (not a group start)
+
 	// Increment the count for the parameter group
 	p.subparams[groupStart]++
 	p.currentSubparams++
@@ -109,10 +109,10 @@ func (p *Params) Iter() [][]uint16 {
 	if p.len == 0 {
 		return nil
 	}
-	
+
 	var result [][]uint16
 	i := 0
-	
+
 	for i < p.len {
 		count := int(p.subparams[i])
 		if count == 0 {
@@ -120,17 +120,17 @@ func (p *Params) Iter() [][]uint16 {
 			i++
 			continue
 		}
-		
+
 		// Collect this parameter group
 		group := make([]uint16, 0, count)
 		for j := 0; j < count && i+j < p.len; j++ {
 			group = append(group, p.params[i+j])
 		}
-		
+
 		result = append(result, group)
 		i += count
 	}
-	
+
 	return result
 }
 
@@ -140,7 +140,7 @@ func (p *Params) String() string {
 	if len(iter) == 0 {
 		return "Params{}"
 	}
-	
+
 	var parts []string
 	for _, group := range iter {
 		if len(group) == 1 {
@@ -153,6 +153,6 @@ func (p *Params) String() string {
 			parts = append(parts, strings.Join(subparts, ":"))
 		}
 	}
-	
+
 	return fmt.Sprintf("Params{%s}", strings.Join(parts, ";"))
 }

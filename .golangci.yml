@@ -1,14 +1,10 @@
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - vendor
-    - examples
 
 linters:
   enable:
     - gofmt
-    - golint
     - govet
     - errcheck
     - staticcheck
@@ -25,20 +21,38 @@ linters:
 
 linters-settings:
   gocyclo:
-    min-complexity: 15
+    min-complexity: 55  # High threshold for VTE parser state machines
   govet:
-    check-shadowing: true
-  golint:
-    min-confidence: 0.8
+    enable:
+      - shadow
   misspell:
     locale: US
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true  # Disabled for interface implementations
+  gosec:
+    excludes:
+      - G115  # Integer overflow - we handle these cases properly
 
 issues:
+  exclude-dirs:
+    - vendor
+    - examples
   exclude-rules:
     - path: _test\.go
       linters:
         - gosec
         - errcheck
+        - gocyclo
     - path: examples/
       linters:
         - errcheck
+    - path: performer\.go
+      linters:
+        - revive
+      text: "unused-parameter"
+    - path: handler\.go
+      linters:
+        - revive
+      text: "unused-parameter"

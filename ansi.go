@@ -122,33 +122,34 @@ func RgbFromString(s string) (Rgb, bool) {
 	if len(s) == 0 {
 		return Rgb{}, false
 	}
-	
+
 	// Remove prefix and validate length
 	var hexStr string
-	if strings.HasPrefix(s, "#") {
+	switch {
+	case strings.HasPrefix(s, "#"):
 		hexStr = s[1:]
-	} else if strings.HasPrefix(strings.ToLower(s), "0x") {
+	case strings.HasPrefix(strings.ToLower(s), "0x"):
 		hexStr = s[2:]
-	} else {
+	default:
 		return Rgb{}, false
 	}
-	
+
 	// Must be exactly 6 hex characters
 	if len(hexStr) != 6 {
 		return Rgb{}, false
 	}
-	
+
 	// Parse hex string
 	val, err := strconv.ParseUint(hexStr, 16, 32)
 	if err != nil {
 		return Rgb{}, false
 	}
-	
+
 	// Extract RGB components
 	r := uint8((val >> 16) & 0xFF)
 	g := uint8((val >> 8) & 0xFF)
 	b := uint8(val & 0xFF)
-	
+
 	return Rgb{R: r, G: g, B: b}, true
 }
 
@@ -161,7 +162,7 @@ func (c Rgb) Blend(other Rgb, alpha float64) Rgb {
 	if alpha >= 1.0 {
 		return other
 	}
-	
+
 	invAlpha := 1.0 - alpha
 	return Rgb{
 		R: uint8(float64(c.R)*invAlpha + float64(other.R)*alpha),
@@ -191,12 +192,12 @@ func (c Rgb) PerceptualDistance(other Rgb) float64 {
 	dr := float64(c.R) - float64(other.R)
 	dg := float64(c.G) - float64(other.G)
 	db := float64(c.B) - float64(other.B)
-	
+
 	// Redmean color difference formula
 	weightR := 2.0 + rMean/256.0
 	weightG := 4.0
 	weightB := 2.0 + (255.0-rMean)/256.0
-	
+
 	return math.Sqrt(weightR*dr*dr + weightG*dg*dg + weightB*db*db)
 }
 
@@ -326,19 +327,19 @@ func indexedColorToRgb(index uint8) Rgb {
 		r := cubeIndex / 36
 		g := (cubeIndex % 36) / 6
 		b := cubeIndex % 6
-		
+
 		// Convert 0-5 range to 0-255 range using standard 6-level palette
 		// Standard values: [0, 95, 135, 175, 215, 255]
 		paletteValues := [6]uint8{0, 95, 135, 175, 215, 255}
 		rVal := paletteValues[r]
 		gVal := paletteValues[g]
 		bVal := paletteValues[b]
-		
+
 		return Rgb{rVal, gVal, bVal}
 	default:
 		// 24-level grayscale ramp (232-255)
 		// Formula: gray = 8 + (index - 232) * 10
-		gray := uint8(8 + (index-232)*10)
+		gray := 8 + (index-232)*10
 		return Rgb{gray, gray, gray}
 	}
 }
@@ -360,19 +361,19 @@ func (c Rgb) ToHsl() Hsl {
 	r := float64(c.R) / 255.0
 	g := float64(c.G) / 255.0
 	b := float64(c.B) / 255.0
-	
+
 	max := math.Max(r, math.Max(g, b))
 	min := math.Min(r, math.Min(g, b))
 	delta := max - min
-	
+
 	// Lightness
 	l := (max + min) / 2.0
-	
+
 	if delta == 0 {
 		// Achromatic (gray)
 		return Hsl{H: 0, S: 0, L: l}
 	}
-	
+
 	// Saturation
 	var s float64
 	if l < 0.5 {
@@ -380,7 +381,7 @@ func (c Rgb) ToHsl() Hsl {
 	} else {
 		s = delta / (2.0 - max - min)
 	}
-	
+
 	// Hue
 	var h float64
 	switch max {
@@ -395,7 +396,7 @@ func (c Rgb) ToHsl() Hsl {
 		h = (r-g)/delta + 4.0
 	}
 	h /= 6.0
-	
+
 	return Hsl{H: h, S: s, L: l}
 }
 
@@ -406,7 +407,7 @@ func (hsl Hsl) ToRgb() Rgb {
 		gray := uint8(hsl.L * 255.0)
 		return Rgb{gray, gray, gray}
 	}
-	
+
 	hueToRgb := func(p, q, t float64) float64 {
 		if t < 0 {
 			t += 1
@@ -425,7 +426,7 @@ func (hsl Hsl) ToRgb() Rgb {
 		}
 		return p
 	}
-	
+
 	var q float64
 	if hsl.L < 0.5 {
 		q = hsl.L * (1.0 + hsl.S)
@@ -433,11 +434,11 @@ func (hsl Hsl) ToRgb() Rgb {
 		q = hsl.L + hsl.S - hsl.L*hsl.S
 	}
 	p := 2.0*hsl.L - q
-	
+
 	r := hueToRgb(p, q, hsl.H+1.0/3.0)
 	g := hueToRgb(p, q, hsl.H)
 	b := hueToRgb(p, q, hsl.H-1.0/3.0)
-	
+
 	return Rgb{
 		R: uint8(r * 255.0),
 		G: uint8(g * 255.0),
@@ -461,7 +462,7 @@ func (c Rgb) IsSafeWith(other Rgb, cbType ColorBlindnessType) bool {
 		// Check if colors are primarily red/green and would be confused
 		cLum := c.Luminance()
 		otherLum := other.Luminance()
-		
+
 		// If both colors have similar luminance but different R/G ratios, they're unsafe
 		lumDiff := math.Abs(cLum - otherLum)
 		if lumDiff < 0.1 { // Similar luminance
@@ -472,11 +473,11 @@ func (c Rgb) IsSafeWith(other Rgb, cbType ColorBlindnessType) bool {
 				return false // Unsafe for deuteranopes
 			}
 		}
-		
+
 		// Use luminance contrast as backup
 		return c.Contrast(other) >= 3.0
 	}
-	
+
 	// For other color blindness types, use simpler simulation
 	var c1, c2 Rgb
 	switch cbType {
@@ -491,7 +492,7 @@ func (c Rgb) IsSafeWith(other Rgb, cbType ColorBlindnessType) bool {
 	default:
 		c1, c2 = c, other
 	}
-	
+
 	return c1.Contrast(c2) >= 3.0
 }
 
@@ -543,15 +544,15 @@ func RestoreCursor() string {
 type Attr uint32
 
 const (
-	AttrNone          Attr = 0
-	AttrBold          Attr = 1 << 0
-	AttrDim           Attr = 1 << 1
-	AttrItalic        Attr = 1 << 2
-	AttrUnderline     Attr = 1 << 3
-	AttrBlinking      Attr = 1 << 4
-	AttrReverse       Attr = 1 << 5
-	AttrHidden        Attr = 1 << 6
-	AttrStrikethrough Attr = 1 << 7
+	AttrNone            Attr = 0
+	AttrBold            Attr = 1 << 0
+	AttrDim             Attr = 1 << 1
+	AttrItalic          Attr = 1 << 2
+	AttrUnderline       Attr = 1 << 3
+	AttrBlinking        Attr = 1 << 4
+	AttrReverse         Attr = 1 << 5
+	AttrHidden          Attr = 1 << 6
+	AttrStrikethrough   Attr = 1 << 7
 	AttrDoubleUnderline Attr = 1 << 8
 	AttrCurlyUnderline  Attr = 1 << 9
 	AttrDottedUnderline Attr = 1 << 10
@@ -584,20 +585,20 @@ type Mode uint16
 const (
 	ModeNone Mode = 0
 	// ANSI modes
-	ModeKeyboardAction          Mode = 2
-	ModeInsert                  Mode = 4
-	ModeReplace                 Mode = 4 | 0x100 // with high bit to distinguish
-	ModeSendReceive             Mode = 12
-	ModeAutomaticNewline        Mode = 20
+	ModeKeyboardAction   Mode = 2
+	ModeInsert           Mode = 4
+	ModeReplace          Mode = 4 | 0x100 // with high bit to distinguish
+	ModeSendReceive      Mode = 12
+	ModeAutomaticNewline Mode = 20
 	// Private modes (start at 0x200)
-	ModeApplicationCursor       Mode = 0x200 + 1
-	ModeApplicationKeypad       Mode = 0x200 + 2
-	ModeAlternateScreen         Mode = 0x200 + 3
-	ModeShowCursor              Mode = 0x200 + 25
-	ModeSaveRestoreCursor       Mode = 0x200 + 1048
-	ModeAlternateScreenBuffer   Mode = 0x200 + 1049
-	ModeBracketedPaste          Mode = 0x200 + 2004
-	ModeSynchronizedOutput      Mode = 0x200 + 2026
+	ModeApplicationCursor     Mode = 0x200 + 1
+	ModeApplicationKeypad     Mode = 0x200 + 2
+	ModeAlternateScreen       Mode = 0x200 + 3
+	ModeShowCursor            Mode = 0x200 + 25
+	ModeSaveRestoreCursor     Mode = 0x200 + 1048
+	ModeAlternateScreenBuffer Mode = 0x200 + 1049
+	ModeBracketedPaste        Mode = 0x200 + 2004
+	ModeSynchronizedOutput    Mode = 0x200 + 2026
 )
 
 // IsPrivate checks if this is a private mode.
@@ -625,8 +626,8 @@ type LineClearMode uint8
 
 const (
 	LineClearRight LineClearMode = iota // Clear from cursor to end of line
-	LineClearLeft                        // Clear from beginning to cursor
-	LineClearAll                         // Clear entire line
+	LineClearLeft                       // Clear from beginning to cursor
+	LineClearAll                        // Clear entire line
 )
 
 // ClearMode specifies how to clear the screen.
@@ -644,7 +645,7 @@ type TabulationClearMode uint8
 
 const (
 	TabClearCurrent TabulationClearMode = iota // Clear tab at current position
-	TabClearAll                                 // Clear all tabs
+	TabClearAll                                // Clear all tabs
 )
 
 // String returns the string representation of TabulationClearMode.
@@ -658,7 +659,6 @@ func (m TabulationClearMode) String() string {
 		return "Unknown"
 	}
 }
-
 
 // C0 defines C0 control characters (0x00-0x1F).
 var C0 = struct {
@@ -796,8 +796,8 @@ func (c CharsetIndex) String() string {
 type StandardCharset int
 
 const (
-	// StandardCharsetAscii is the default ASCII charset
-	StandardCharsetAscii StandardCharset = iota
+	// StandardCharsetASCII is the default ASCII charset
+	StandardCharsetASCII StandardCharset = iota
 	// StandardCharsetSpecialLineDrawing is the special character and line drawing set
 	StandardCharsetSpecialLineDrawing
 )
@@ -805,8 +805,8 @@ const (
 // String returns the string representation of StandardCharset
 func (s StandardCharset) String() string {
 	switch s {
-	case StandardCharsetAscii:
-		return "Ascii"
+	case StandardCharsetASCII:
+		return "ASCII"
 	case StandardCharsetSpecialLineDrawing:
 		return "SpecialCharacterAndLineDrawing"
 	default:
@@ -818,7 +818,7 @@ func (s StandardCharset) String() string {
 // ASCII is the common case and does as little as possible.
 func (s StandardCharset) Map(c rune) rune {
 	switch s {
-	case StandardCharsetAscii:
+	case StandardCharsetASCII:
 		return c
 	case StandardCharsetSpecialLineDrawing:
 		return mapSpecialLineDrawing(c)
@@ -898,4 +898,3 @@ func mapSpecialLineDrawing(c rune) rune {
 		return c
 	}
 }
-
