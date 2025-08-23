@@ -196,6 +196,12 @@ Contributions are welcome! Please ensure:
 3. Add tests for new functionality
 4. Performance-critical code includes benchmarks
 
+## Developers
+
+| Avatar | Name | GitHub | Social Media |
+|--------|------|--------|--------------|
+| <img src="https://github.com/youzhonghui.png" width="50" height="50" style="border-radius: 50%;"> | Karl | [github.com/youzhonghui](https://github.com/youzhonghui) | [x.com/gofindkarl](https://x.com/gofindkarl) |
+
 ## License
 
 MIT License - see LICENSE file for details.
@@ -206,3 +212,7 @@ This project is inspired by:
 
 - [alacritty/vte](https://github.com/alacritty/vte) - A state machine based VTE parser in Rust, which provides the foundation for terminal emulation parsing
 - [zellij-org/zellij](https://github.com/zellij-org/zellij) - A terminal workspace with innovative approaches to terminal multiplexing and rendering
+
+<div align="center">
+  <sub>Built by <a href="https://cliofy.ai">cliofy.ai</a></sub>
+</div>
